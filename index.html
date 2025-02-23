@@ -1,14 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>テキスト表示</title>
 </head>
 
 <body>
-    <h1> Hello TSUMUGI! </h1>
+    <div id="output"></div>
+    <script>
+        fetch('https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('ネットワークエラーです');
+                }
+                return response.text();
+            })
+            .then(text => {
+                document.getElementById('output').innerText = text;
+            })
+            .catch(error => {
+                console.error('エラー:', error);
+            });
+    </script>
 </body>
 
 </html>
