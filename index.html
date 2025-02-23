@@ -4,30 +4,70 @@
 <head>
     <meta charset="UTF-8">
     <title>テキスト表示</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" defer></script>
 </head>
 
 <body>
-    <h1>テキスト表示：ヘッダーを空にする, キャッシュを無効にする</h1>
-    <div id="output"></div>
+    <h1>テキストファイルの取得</h1>
+    <h2>通常のテキストファイル</h2>
+    <div id="output_text">読み込み中...</div>
+    <h2>Gzip 圧縮されたファイル</h2>
+    <div id="output_gz">読み込み中...</div>
+
     <script>
-        fetch("https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt", {
-            method: "GET",
-            cache: "no-store", // キャッシュを無効にする
-            headers: {
-                "user-agent": "", // ユーザーエージェントを空にする
+        // 通常のテキストファイルを取得
+        async function fetchTextFile(url, outputId) {
+            try {
+                const response = await fetch(url, {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: { "user-agent": "" }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`ネットワークエラー: ${response.status}`);
+                }
+
+                const text = await response.text();
+                document.getElementById(outputId).innerText = text;
+            } catch (error) {
+                console.error(`エラー: ${error}`);
+                document.getElementById(outputId).innerText = "エラーが発生しました";
             }
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('ネットワークエラーです');
+        }
+
+        // Gzip圧縮ファイルを取得し解凍 (pako.js を使用)
+        async function fetchGzipTextFile(url, outputId) {
+            try {
+                const response = await fetch(url, {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: { "user-agent": "" }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`ネットワークエラー: ${response.status}`);
+                }
+
+                // Gzip圧縮されたバイナリデータを取得
+                const compressedData = await response.arrayBuffer();
+
+                // Pako を使って Gzip 解凍
+                const decompressedData = new TextDecoder("utf-8").decode(pako.inflate(new Uint8Array(compressedData)));
+
+                // 解凍後のテキストを表示
+                document.getElementById(outputId).innerText = decompressedData;
+            } catch (error) {
+                console.error(`エラー: ${error}`);
+                document.getElementById(outputId).innerText = "エラーが発生しました";
             }
-            return response.text();
-        })
-            .then(text => {
-                document.getElementById('output').innerText = text;
-            })
-            .catch(error => {
-                console.error('エラー:', error);
-            });
+        }
+
+        // 通常のテキストファイルを取得
+        fetchTextFile("https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt", "output_text");
+
+        // Gzip圧縮ファイルを取得し解凍
+        fetchGzipTextFile("https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt.gz", "output_gz");
     </script>
 </body>
 
