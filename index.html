@@ -13,7 +13,9 @@
         fetch("https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt", {
             method: "GET",
             cache: "no-store", // キャッシュを無効にする
-            headers: {} // ヘッダーを空にする
+            headers: {
+                "user-agent": "", // ユーザーエージェントを空にする
+            }
         }).then(response => {
             if (!response.ok) {
                 throw new Error('ネットワークエラーです');
