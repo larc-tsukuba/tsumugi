@@ -7,14 +7,12 @@
 </head>
 
 <body>
-    <h1>テキスト表示</h1>
+    <h1>テキスト表示：ヘッダーを空にする</h1>
     <div id="output"></div>
     <script>
         fetch("https://pub-e4f4fb56dde64c0cb9dccc747e84e5f9.r2.dev/test.txt", {
             method: "GET",
-            headers: {
-                "User-Agent": "" // 空にする
-            }
+            headers: {} // ヘッダーを空にする
         }).then(response => {
             if (!response.ok) {
                 throw new Error('ネットワークエラーです');
