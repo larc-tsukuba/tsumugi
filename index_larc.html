@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>テキスト表示</title>
+</head>
+
+<body>
+    <h1>テキスト表示</h1>
+    <div id="output"></div>
+    <script>
+        fetch("https://www.md.tsukuba.ac.jp/LabAnimalResCNT/test-tsumugi/backup/2025-02-22/data/available_gene_symbols.txt", {
+            method: "GET",
+            headers: {
+                "User-Agent": "" // 空にする
+            }
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('ネットワークエラーです');
+            }
+            return response.text();
+        })
+            .then(text => {
+                document.getElementById('output').innerText = text;
+            })
+            .catch(error => {
+                console.error('エラー:', error);
+            });
+    </script>
+</body>
+
+</html>
