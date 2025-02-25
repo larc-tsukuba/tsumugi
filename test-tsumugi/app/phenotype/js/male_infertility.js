@@ -56,7 +56,7 @@ async function loadData() {
 }
 
 // 使用するデータを取得して初期化
-loadData().then(({ elements, map_symbol_to_id }) => {
+await loadData().then(({ elements, map_symbol_to_id }) => {
     if (!elements || !map_symbol_to_id) {
         console.error("Failed to load data.");
         return;
@@ -70,6 +70,7 @@ loadData().then(({ elements, map_symbol_to_id }) => {
     setupEventListeners();
 });
 
+console.log("await response") // ! デバッグ用 DEBUG
 
 // Cytoscape の初期化関数
 function initializeCytoscape() {
