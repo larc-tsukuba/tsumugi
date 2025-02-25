@@ -19,7 +19,7 @@ const elements = (function () {
     let result = null;
 
     try {
-        req.open("GET", "./data/Rab10.json.gz", false);
+        req.open("GET", "../../data/genesymbol/Rab10.json.gz", false);
         req.overrideMimeType("text/plain; charset=x-user-defined"); // バイナリデータとして扱うための設定
         req.send(null);
         if (req.status === 200) {
@@ -48,7 +48,7 @@ const map_symbol_to_id = (function () {
             result = JSON.parse(req.responseText);
         }
     };
-    req.open("GET", "../data/marker_symbol_accession_id.json", false);
+    req.open("GET", "../../data/marker_symbol_accession_id.json", false);
 
 
     req.send(null);

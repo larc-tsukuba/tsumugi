@@ -20,7 +20,7 @@ const elements = (function () {
     let result = null;
 
     try {
-        req.open("GET", "./data/increased_fasting_circulating_glucose_level.json.gz", false);
+        req.open("GET", "../../data/phenotype/increased_fasting_circulating_glucose_level.json.gz", false);
 
         req.overrideMimeType("text/plain; charset=x-user-defined"); // バイナリデータとして扱うための設定
         req.send(null);
@@ -51,7 +51,7 @@ const map_symbol_to_id = (function () {
             result = JSON.parse(req.responseText);
         }
     };
-    req.open("GET", "../data/marker_symbol_accession_id.json", false);
+    req.open("GET", "../../data/marker_symbol_accession_id.json", false);
 
     req.send(null);
     return result;
