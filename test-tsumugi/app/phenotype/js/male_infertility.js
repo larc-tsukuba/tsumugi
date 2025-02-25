@@ -56,19 +56,20 @@ async function loadData() {
 }
 
 // 使用するデータを取得して初期化
-await loadData().then(({ elements, map_symbol_to_id }) => {
-    if (!elements || !map_symbol_to_id) {
+async function loadData() {
+    window.elements = await fetchJsonGz("../../data/phenotype/male_infertility.json.gz");
+    window.map_symbol_to_id = await fetchJson("../../data/marker_symbol_accession_id.json");
+
+    if (!window.elements || !window.map_symbol_to_id) {
         console.error("Failed to load data.");
         return;
     }
 
-    // 取得したデータをグローバル変数に設定
-    window.elements = elements;
-    window.map_symbol_to_id = map_symbol_to_id;
-
     initializeCytoscape();
     setupEventListeners();
-});
+};
+
+await loadData();
 
 console.log("await response") // ! デバッグ用 DEBUG
 
