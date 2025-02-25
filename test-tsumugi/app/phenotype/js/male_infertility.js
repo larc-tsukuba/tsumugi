@@ -78,6 +78,21 @@ function initializeCytoscape() {
         return;
     }
 
+
+    // `window.elements` がロードされた後に `nodeSizes` と `edgeSizes` を計算
+    const nodeSizes = window.elements
+        .filter(ele => ele.data.node_color !== undefined)
+        .map(ele => ele.data.node_color);
+
+    const edgeSizes = window.elements
+        .filter(ele => ele.data.edge_size !== undefined)
+        .map(ele => ele.data.edge_size);
+
+    const nodeMin = nodeSizes.length ? Math.min(...nodeSizes) : 0;
+    const nodeMax = nodeSizes.length ? Math.max(...nodeSizes) : 1;
+    const edgeMin = edgeSizes.length ? Math.min(...edgeSizes) : 0;
+    const edgeMax = edgeSizes.length ? Math.max(...edgeSizes) : 1;
+
     const cy = cytoscape({
         container: document.querySelector('.cy'),
         elements: window.elements,
@@ -111,7 +126,12 @@ function initializeCytoscape() {
         layout: getLayoutOptions()
     });
 
-    window.cy = cy; // Cytoscape オブジェクトをグローバル変数に保存
+    // グローバル変数に保存
+    window.cy = cy;
+    window.nodeMin = nodeMin;
+    window.nodeMax = nodeMax;
+    window.edgeMin = edgeMin;
+    window.edgeMax = edgeMax;
 }
 
 function setupEventListeners() {
@@ -126,10 +146,6 @@ function setupEventListeners() {
 // ############################################################################
 // 遺伝型・正特異的フィルタリング関数
 // ############################################################################
-
-// フィルターフォームの取得
-const filterGenotypeForm = document.getElementById('genotype-filter-form');
-const filterSexForm = document.getElementById('sex-filter-form');
 
 // フィルタリング関数（遺伝型 + 性別）
 function filterElementsByGenotypeAndSex() {
@@ -174,6 +190,10 @@ function filterElementsByGenotypeAndSex() {
     filterElements();
 }
 
+// フィルターフォームの取得
+const filterGenotypeForm = document.getElementById('genotype-filter-form');
+const filterSexForm = document.getElementById('sex-filter-form');
+
 // フォーム変更時にフィルタリング関数を実行
 filterGenotypeForm.addEventListener('change', filterElementsByGenotypeAndSex);
 filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
@@ -182,14 +202,6 @@ filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
 // ############################################################################
 // Normalize node color and edge sizes
 // ############################################################################
-
-const nodeSizes = window.elements.filter(ele => ele.data.node_color !== undefined).map(ele => ele.data.node_color);
-const edgeSizes = window.elements.filter(ele => ele.data.edge_size !== undefined).map(ele => ele.data.edge_size);
-
-const nodeMin = Math.min(...nodeSizes);
-const nodeMax = Math.max(...nodeSizes);
-const edgeMin = Math.min(...edgeSizes);
-const edgeMax = Math.max(...edgeSizes);
 
 function scaleToOriginalRange(value, minValue, maxValue) {
     return minValue + (value - 1) * (maxValue - minValue) / 9;
@@ -245,39 +257,6 @@ function getLayoutOptions() {
         componentSpacing: componentSpacingValue
     };
 }
-
-const cy = cytoscape({
-    container: document.querySelector('.cy'),
-    elements: window.elements,
-    style: [
-        {
-            selector: 'node',
-            style: {
-                'label': 'data(label)',
-                'text-valign': 'center',
-                'text-halign': 'center',
-                'font-size': '20px',
-                'width': 15,
-                'height': 15,
-                'background-color': function (ele) {
-                    const color_value = scaleValue(ele.data('node_color'), nodeMin, nodeMax, 1, 10);
-                    return getColorForValue(color_value);
-                }
-            }
-        },
-        {
-            selector: 'edge',
-            style: {
-                'curve-style': 'bezier',
-                'text-rotation': 'autorotate',
-                'width': function (ele) {
-                    return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2);
-                }
-            }
-        }
-    ],
-    layout: getLayoutOptions()
-});
 
 
 // レイアウトが変更されるか、フィルタリングが実行された際に連結成分を計算する関数
@@ -375,7 +354,9 @@ function getNodeTooltipText(data) {
         ? data.annotation.map(anno => '・ ' + anno).join('<br>')
         : '・ ' + data.annotation;
 
-    const url_impc = `https://www.mousephenotype.org/data/genes/${window.map_symbol_to_id[data.label]}`;
+    const geneId = window.map_symbol_to_id?.[data.label] ?? null;
+    const url_impc = geneId ? `https://www.mousephenotype.org/data/genes/${geneId}` : "#"; // データがない場合はリンクを無効化
+    // const url_impc = `https://www.mousephenotype.org/data/genes/${window.map_symbol_to_id[data.label]}`;
     return `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.label} KO mice</a></b><br>` + annotations;
 }
 
@@ -475,10 +456,10 @@ let nodeSliderValues = [1, 10];
 function filterElements() {
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
-    const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
-    const nodeMaxValue = scaleToOriginalRange(nodeSliderValues[1], nodeMin, nodeMax);
-    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax);
-    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax);
+    const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], window.nodeMin, window.nodeMax);
+    const nodeMaxValue = scaleToOriginalRange(nodeSliderValues[1], window.nodeMin, window.nodeMax);
+    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], window.edgeMin, window.edgeMax);
+    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], window.edgeMin, window.edgeMax);
 
     // Filter nodes based on color
     cy.nodes().forEach(function (node) {
