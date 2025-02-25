@@ -262,7 +262,7 @@ function getLayoutOptions() {
 // レイアウトが変更されるか、フィルタリングが実行された際に連結成分を計算する関数
 function calculateConnectedComponents() {
     // 表示されている要素のみを取得
-    const visibleElements = cy.elements(':visible');
+    const visibleElements = window.cy.elements(':visible');
 
     // 可視状態の要素で連結成分を計算
     const connectedComponents = visibleElements.components();
@@ -292,7 +292,7 @@ function calculateConnectedComponents() {
 }
 
 // レイアウト変更後にイベントリスナーを設定
-cy.on('layoutstop', function () {
+window.cy.on('layoutstop', function () {
     calculateConnectedComponents();
 });
 
@@ -362,8 +362,8 @@ function getNodeTooltipText(data) {
 
 // Function: Generate tooltip text for an edge
 function getEdgeTooltipText(data) {
-    const sourceNode = cy.getElementById(data.source).data('label');
-    const targetNode = cy.getElementById(data.target).data('label');
+    const sourceNode = window.cy.getElementById(data.source).data('label');
+    const targetNode = window.cy.getElementById(data.target).data('label');
     const annotations = Array.isArray(data.annotation)
         ? data.annotation.map(anno => '・ ' + anno).join('<br>')
         : '・ ' + data.annotation;
@@ -373,8 +373,8 @@ function getEdgeTooltipText(data) {
 
 // Function: Calculate the midpoint of an edge
 function getEdgeMidpoint(sourceId, targetId) {
-    const sourcePos = cy.getElementById(sourceId).renderedPosition();
-    const targetPos = cy.getElementById(targetId).renderedPosition();
+    const sourcePos = window.cy.getElementById(sourceId).renderedPosition();
+    const targetPos = window.cy.getElementById(targetId).renderedPosition();
     return {
         x: (sourcePos.x + targetPos.x) / 2,
         y: (sourcePos.y + targetPos.y) / 2
@@ -382,7 +382,7 @@ function getEdgeMidpoint(sourceId, targetId) {
 }
 
 // Main Cytoscape event listener
-cy.on('tap', 'node, edge', function (event) {
+window.cy.on('tap', 'node, edge', function (event) {
     const data = event.target.data();
     let tooltipText = '';
     let pos;
@@ -408,7 +408,7 @@ cy.on('tap', 'node, edge', function (event) {
 
 
 // Hide tooltip when tapping on background
-cy.on('tap', function (event) {
+window.cy.on('tap', function (event) {
     // If the clicked element is not a node or edge, remove the tooltip
     if (event.target === cy) {
         document.querySelectorAll('.cy-tooltip').forEach(function (el) {
@@ -427,7 +427,7 @@ cy.on('tap', function (event) {
 // --------------------------------------------------------
 document.getElementById('layout-dropdown').addEventListener('change', function () {
     currentLayout = this.value;
-    cy.layout({ name: currentLayout }).run();
+    window.cy.layout({ name: currentLayout }).run();
 });
 
 // --------------------------------------------------------
@@ -462,16 +462,16 @@ function filterElements() {
     const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], window.edgeMin, window.edgeMax);
 
     // Filter nodes based on color
-    cy.nodes().forEach(function (node) {
+    window.cy.nodes().forEach(function (node) {
         const nodeColor = node.data('node_color');
         node.style('display', (nodeColor >= nodeMinValue && nodeColor <= nodeMaxValue) ? 'element' : 'none');
     });
 
     // Filter edges based on size
-    cy.edges().forEach(function (edge) {
+    window.cy.edges().forEach(function (edge) {
         const edgeSize = edge.data('edge_size');
-        const sourceNode = cy.getElementById(edge.data('source'));
-        const targetNode = cy.getElementById(edge.data('target'));
+        const sourceNode = window.cy.getElementById(edge.data('source'));
+        const targetNode = window.cy.getElementById(edge.data('target'));
 
         if (sourceNode.style('display') === 'element' && targetNode.style('display') === 'element' &&
             edgeSize >= edgeMinValue && edgeSize <= edgeMaxValue) {
@@ -482,7 +482,7 @@ function filterElements() {
     });
 
     // After filtering, remove nodes with no connected visible edges
-    cy.nodes().forEach(function (node) {
+    window.cy.nodes().forEach(function (node) {
         const connectedEdges = node.connectedEdges().filter(edge => edge.style('display') === 'element');
         if (connectedEdges.length === 0) {
             node.style('display', 'none');  // Hide node if no connected edges
@@ -490,7 +490,7 @@ function filterElements() {
     });
 
     // Reapply layout after filtering
-    cy.layout(getLayoutOptions()).run();
+    window.cy.layout(getLayoutOptions()).run();
 }
 
 // --------------------------------------------------------
@@ -526,7 +526,7 @@ noUiSlider.create(fontSizeSlider, {
 fontSizeSlider.noUiSlider.on('update', function (value) {
     const intValues = Math.round(value);
     document.getElementById('font-size-value').textContent = intValues;
-    cy.style().selector('node').style('font-size', intValues + 'px').update();
+    window.cy.style().selector('node').style('font-size', intValues + 'px').update();
 });
 
 // --------------------------------------------------------
@@ -545,7 +545,7 @@ noUiSlider.create(edgeWidthSlider, {
 edgeWidthSlider.noUiSlider.on('update', function (value) {
     const intValues = Math.round(value);
     document.getElementById('edge-width-value').textContent = intValues;
-    cy.style().selector('edge').style('width', function (ele) {
+    window.cy.style().selector('edge').style('width', function (ele) {
         return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2) * intValues;
     }).update();
 });
@@ -568,7 +568,7 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
     nodeRepulsionValue = scaleToOriginalRange(parseFloat(intValues), nodeRepulsionMin, nodeRepulsionMax);
     componentSpacingValue = scaleToOriginalRange(parseFloat(intValues), componentSpacingMin, componentSpacingMax);
     document.getElementById('node-repulsion-value').textContent = intValues;
-    cy.layout(getLayoutOptions()).run();
+    window.cy.layout(getLayoutOptions()).run();
 });
 
 
@@ -581,7 +581,7 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
 // --------------------------------------------------------
 
 document.getElementById('export-png').addEventListener('click', function () {
-    const pngContent = cy.png({
+    const pngContent = window.cy.png({
         scale: 6.25,   // Scale to achieve 600 DPI
         full: true     // Set to true to include the entire graph, even the offscreen parts
     });
