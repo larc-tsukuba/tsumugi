@@ -15,48 +15,58 @@
 
 const target_phenotype = 'male_infertility'.replace(/_/g, " ");
 
-const elements = (function () {
-    const req = new XMLHttpRequest();
-    let result = null;
-
+async function fetchJsonGz(url) {
     try {
-        req.open("GET", "../../data/phenotype/male_infertility.json.gz", false);
-
-        req.overrideMimeType("text/plain; charset=x-user-defined"); // バイナリデータとして扱うための設定
-        req.send(null);
-
-        if (req.status === 200) {
-            // gzipデータをUint8Arrayに変換
-            const compressedData = new Uint8Array(
-                req.responseText.split("").map(c => c.charCodeAt(0) & 0xff)
-            );
-            // pakoでデコード
-            const decompressedData = pako.ungzip(compressedData, { to: "string" });
-            result = JSON.parse(decompressedData);
-        } else {
-            console.error("HTTP error!! status:", req.status);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
+
+        // バイナリデータとして取得
+        const compressedData = new Uint8Array(await response.arrayBuffer());
+        // pakoでデコード
+        const decompressedData = pako.ungzip(compressedData, { to: "string" });
+
+        return JSON.parse(decompressedData);
     } catch (error) {
-        console.error("Failed to load or decode JSON.gz:", error);
+        console.error(`Failed to fetch or decode JSON.gz from ${url}:`, error);
+        return null;
+    }
+}
+
+async function fetchJson(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Failed to fetch JSON from ${url}:`, error);
+        return null;
+    }
+}
+
+// JSONデータを非同期で取得
+async function loadData() {
+    const elements = await fetchJsonGz("../../data/phenotype/male_infertility.json.gz");
+    const map_symbol_to_id = await fetchJson("../../data/marker_symbol_accession_id.json");
+
+    return { elements, map_symbol_to_id };
+}
+
+// 使用するデータを取得して初期化
+loadData().then(({ elements, map_symbol_to_id }) => {
+    if (!elements || !map_symbol_to_id) {
+        console.error("Failed to load data.");
+        return;
     }
 
-    return result;
-})();
+    // 取得したデータをグローバル変数に設定
+    window.elements = elements;
+    window.map_symbol_to_id = map_symbol_to_id;
 
-const map_symbol_to_id = (function () {
-    const req = new XMLHttpRequest();
-    let result = null;
-    req.onreadystatechange = function () {
-        if (req.readyState === 4 && req.status === 200) {
-            result = JSON.parse(req.responseText);
-        }
-    };
-    req.open("GET", "../../data/marker_symbol_accession_id.json", false);
-
-    req.send(null);
-    return result;
-})();
-
+});
 
 // ############################################################################
 // 遺伝型・正特異的フィルタリング関数
@@ -79,9 +89,9 @@ function filterElementsByGenotypeAndSex() {
     // もし checkedSexs に Female と Male の両方が含まれていたら、性別のフィルターを無効にし、遺伝型のフィルターのみ適用
     if (checkedSexs.includes("Female") && checkedSexs.includes("Male")) {
         // console.log("性別フィルター無効（遺伝型のみ適用）");
-        targetElements = elements;
+        targetElements = window.elements;
     } else {
-        targetElements = elements.map(item => {
+        targetElements = window.elements.map(item => {
             if (item.data.annotation) {
                 const filteredAnnotations = item.data.annotation.filter(annotation => {
                     const sexMatch = checkedSexs.some(sex => annotation.includes(`${sex}`));
@@ -132,8 +142,8 @@ filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
 // Normalize node color and edge sizes
 // ############################################################################
 
-const nodeSizes = elements.filter(ele => ele.data.node_color !== undefined).map(ele => ele.data.node_color);
-const edgeSizes = elements.filter(ele => ele.data.edge_size !== undefined).map(ele => ele.data.edge_size);
+const nodeSizes = window.elements.filter(ele => ele.data.node_color !== undefined).map(ele => ele.data.node_color);
+const edgeSizes = window.elements.filter(ele => ele.data.edge_size !== undefined).map(ele => ele.data.edge_size);
 
 const nodeMin = Math.min(...nodeSizes);
 const nodeMax = Math.max(...nodeSizes);
@@ -169,6 +179,23 @@ function getColorForValue(value) {
 // Cytoscape Elements handler
 // ############################################################################
 
+let currentLayout = 'cose';
+
+const nodeRepulsionMin = 1;
+const nodeRepulsionMax = 10000;
+let nodeRepulsionValue = scaleToOriginalRange(
+    parseFloat(document.getElementById('nodeRepulsion-slider').value),
+    nodeRepulsionMin,
+    nodeRepulsionMax
+);
+
+const componentSpacingMin = 1;
+const componentSpacingMax = 200;
+let componentSpacingValue = scaleToOriginalRange(
+    parseFloat(this.value),
+    componentSpacingMin,
+    componentSpacingMax
+);
 
 function getLayoutOptions() {
     return {
@@ -178,28 +205,9 @@ function getLayoutOptions() {
     };
 }
 
-let currentLayout = 'cose';
-
-const nodeRepulsionMin = 1;
-const nodeRepulsionMax = 10000;
-const componentSpacingMin = 1;
-const componentSpacingMax = 200;
-
-let nodeRepulsionValue = scaleToOriginalRange(
-    parseFloat(document.getElementById('nodeRepulsion-slider').value),
-    nodeRepulsionMin,
-    nodeRepulsionMax
-);
-
-let componentSpacingValue = scaleToOriginalRange(
-    parseFloat(this.value),
-    componentSpacingMin,
-    componentSpacingMax
-);
-
 const cy = cytoscape({
     container: document.querySelector('.cy'),
-    elements: elements,
+    elements: window.elements,
     style: [
         {
             selector: 'node',
@@ -326,7 +334,7 @@ function getNodeTooltipText(data) {
         ? data.annotation.map(anno => '・ ' + anno).join('<br>')
         : '・ ' + data.annotation;
 
-    const url_impc = `https://www.mousephenotype.org/data/genes/${map_symbol_to_id[data.label]}`;
+    const url_impc = `https://www.mousephenotype.org/data/genes/${window.map_symbol_to_id[data.label]}`;
     return `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.label} KO mice</a></b><br>` + annotations;
 }
 
