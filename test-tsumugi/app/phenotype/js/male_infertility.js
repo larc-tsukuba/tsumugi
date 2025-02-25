@@ -69,7 +69,9 @@ async function loadData() {
     setupEventListeners();
 };
 
-await loadData();
+(async function () {
+    await loadData();
+})();
 
 console.log("await response") // ! デバッグ用 DEBUG
 
