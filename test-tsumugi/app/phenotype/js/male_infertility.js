@@ -66,7 +66,62 @@ loadData().then(({ elements, map_symbol_to_id }) => {
     window.elements = elements;
     window.map_symbol_to_id = map_symbol_to_id;
 
+    initializeCytoscape();
+    setupEventListeners();
 });
+
+
+// Cytoscape の初期化関数
+function initializeCytoscape() {
+    if (!window.elements) {
+        console.error("Cytoscape initialization failed: window.elements is undefined.");
+        return;
+    }
+
+    const cy = cytoscape({
+        container: document.querySelector('.cy'),
+        elements: window.elements,
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    'label': 'data(label)',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'font-size': '20px',
+                    'width': 15,
+                    'height': 15,
+                    'background-color': function (ele) {
+                        const color_value = scaleValue(ele.data('node_color'), nodeMin, nodeMax, 1, 10);
+                        return getColorForValue(color_value);
+                    }
+                }
+            },
+            {
+                selector: 'edge',
+                style: {
+                    'curve-style': 'bezier',
+                    'text-rotation': 'autorotate',
+                    'width': function (ele) {
+                        return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2);
+                    }
+                }
+            }
+        ],
+        layout: getLayoutOptions()
+    });
+
+    window.cy = cy; // Cytoscape オブジェクトをグローバル変数に保存
+}
+
+function setupEventListeners() {
+    const filterGenotypeForm = document.getElementById('genotype-filter-form');
+    const filterSexForm = document.getElementById('sex-filter-form');
+
+    filterGenotypeForm.addEventListener('change', filterElementsByGenotypeAndSex);
+    filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
+}
+
 
 // ############################################################################
 // 遺伝型・正特異的フィルタリング関数
@@ -78,60 +133,46 @@ const filterSexForm = document.getElementById('sex-filter-form');
 
 // フィルタリング関数（遺伝型 + 性別）
 function filterElementsByGenotypeAndSex() {
-    const checkedGenotypes = Array.from(filterGenotypeForm.querySelectorAll('input:checked')).map(input => input.value);
-    const checkedSexs = Array.from(filterSexForm.querySelectorAll('input:checked')).map(input => input.value);
+    if (!window.elements) return; // `window.elements` がロードされる前に呼ばれないようにする
 
-    // console.log("検索キーワード (Genotype):", checkedGenotypes);
-    // console.log("検索キーワード (Sex):", checkedSexs);
+    const checkedGenotypes = Array.from(document.querySelectorAll('#genotype-filter-form input:checked'))
+        .map(input => input.value);
+    const checkedSexs = Array.from(document.querySelectorAll('#sex-filter-form input:checked'))
+        .map(input => input.value);
 
-    let targetElements;
+    let targetElements = [...window.elements];
 
-    // もし checkedSexs に Female と Male の両方が含まれていたら、性別のフィルターを無効にし、遺伝型のフィルターのみ適用
-    if (checkedSexs.includes("Female") && checkedSexs.includes("Male")) {
-        // console.log("性別フィルター無効（遺伝型のみ適用）");
-        targetElements = window.elements;
-    } else {
-        targetElements = window.elements.map(item => {
+    if (!(checkedSexs.includes("Female") && checkedSexs.includes("Male"))) {
+        targetElements = targetElements.map(item => {
             if (item.data.annotation) {
-                const filteredAnnotations = item.data.annotation.filter(annotation => {
-                    const sexMatch = checkedSexs.some(sex => annotation.includes(`${sex}`));
-                    return sexMatch;
-                });
-
+                const filteredAnnotations = item.data.annotation.filter(annotation =>
+                    checkedSexs.some(sex => annotation.includes(`${sex}`))
+                );
                 return { ...item, data: { ...item.data, annotation: filteredAnnotations } };
             }
             return item;
         }).filter(item => item.data.annotation && item.data.annotation.length > 0);
     }
 
-    // 遺伝型フィルターの適用
     let filteredElements = targetElements.map(item => {
         if (item.data.annotation) {
-            const filteredAnnotations = item.data.annotation.filter(annotation => {
-                const genotypeMatch = checkedGenotypes.some(genotype => annotation.includes(`${genotype}`));
-                return genotypeMatch;
-            });
-
+            const filteredAnnotations = item.data.annotation.filter(annotation =>
+                checkedGenotypes.some(genotype => annotation.includes(`${genotype}`))
+            );
             return { ...item, data: { ...item.data, annotation: filteredAnnotations } };
         }
         return item;
     }).filter(item => item.data.annotation && item.data.annotation.length > 0);
 
-    // console.log("標的表現型:", target_phenotype);
-    // `target_phenotype` をまったく含まないノードを削除
-    filteredElements = filteredElements.filter(item => {
-        if (item.data.annotation) {
-            return item.data.annotation.some(annotation => annotation.includes(target_phenotype));
-        }
-        return false;
-    }).filter(item => item.data.annotation && item.data.annotation.length > 2); // 3つ以上の表現型を持つノードのみを表示
+    filteredElements = filteredElements.filter(item =>
+        item.data.annotation.some(annotation => annotation.includes(target_phenotype))
+    ).filter(item => item.data.annotation && item.data.annotation.length > 2);
 
     // Cytoscape のデータを更新
-    cy.elements().remove(); // 既存の要素を削除
-    cy.add(filteredElements); // 新しい要素を追加
-    filterElements(); // 孤立ノードを削除
+    window.cy.elements().remove();
+    window.cy.add(filteredElements);
+    filterElements();
 }
-
 
 // フォーム変更時にフィルタリング関数を実行
 filterGenotypeForm.addEventListener('change', filterElementsByGenotypeAndSex);
