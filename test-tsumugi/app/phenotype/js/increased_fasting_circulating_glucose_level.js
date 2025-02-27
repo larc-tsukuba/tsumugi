@@ -405,23 +405,6 @@ noUiSlider.create(edgeSlider, {
 });
 
 
-// <!-- REMOVE FROM THIS LINE IF BINARY -->
-
-// --------------------------------------------------------
-// Initialization of the Slider for Phenotypes severity
-// --------------------------------------------------------
-
-const nodeSlider = document.getElementById('filter-node-slider');
-noUiSlider.create(nodeSlider, {
-    start: [1, 10],
-    connect: true,
-    range: {
-        'min': 1,
-        'max': 10
-    },
-    step: 1
-});
-// <!-- REMOVE TO THIS LINE -->
 
 
 // --------------------------------------------------------
@@ -431,9 +414,6 @@ noUiSlider.create(nodeSlider, {
 let nodeSliderValues = [1, 10];
 
 function filterElements() {
-    // <!-- REMOVE FROM THIS LINE IF BINARY -->
-    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat);
-    // <!-- REMOVE TO THIS LINE -->
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
     const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
@@ -484,13 +464,6 @@ edgeSlider.noUiSlider.on('update', function (values) {
 });
 
 
-// <!-- REMOVE FROM THIS LINE IF BINARY -->
-nodeSlider.noUiSlider.on('update', function (values) {
-    const intValues = values.map(value => Math.round(value));
-    document.getElementById('node-color-value').textContent = intValues.join(' - ');
-    filterElements();
-});
-// <!-- REMOVE TO THIS LINE -->
 
 
 // ############################################################################
