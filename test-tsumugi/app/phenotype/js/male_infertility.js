@@ -2,201 +2,116 @@
 // Input handler
 // ############################################################################
 
-// const elements = [
-//     { data: { id: 'Nanog', label: 'Nanog', annotation: ['hoge', 'hooo'], node_color: 50, } },
-//     { data: { id: 'Pou5f1', label: 'Pou5f1', annotation: 'fuga', node_color: 100, } },
-//     { data: { id: 'Sox2', label: 'Sox2', annotation: 'foo', node_color: 3, } },
-//     { data: { source: 'Nanog', target: 'Pou5f1', annotation: ['Foo', 'FooBar'], edge_size: 5 } },
-//     { data: { source: 'Nanog', target: 'Sox2', annotation: 'FooBar', edge_size: 1 } },
-//     { data: { source: 'Sox2', target: 'Pou5f1', annotation: 'FooBar', edge_size: 10 } },
-// ];
-
-// const map_symbol_to_id = { 'Nanog': 'MGI:97281', 'Pou5f1': 'MGI:1352748', 'Sox2': 'MGI:96217' };
 
 const target_phenotype = 'male_infertility'.replace(/_/g, " ");
 
-async function fetchJsonGz(url) {
+const elements = (function () {
+    const req = new XMLHttpRequest();
+    let result = null;
+
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+        req.open("GET", "../../data/phenotype/male_infertility.json.gz", false);
+
+        req.overrideMimeType("text/plain; charset=x-user-defined"); // バイナリデータとして扱うための設定
+        req.send(null);
+
+        if (req.status === 200) {
+            // gzipデータをUint8Arrayに変換
+            const compressedData = new Uint8Array(
+                req.responseText.split("").map(c => c.charCodeAt(0) & 0xff)
+            );
+            // pakoでデコード
+            const decompressedData = pako.ungzip(compressedData, { to: "string" });
+            result = JSON.parse(decompressedData);
+        } else {
+            console.error("HTTP error!! status:", req.status);
         }
-
-        // バイナリデータとして取得
-        const compressedData = new Uint8Array(await response.arrayBuffer());
-        // pakoでデコード
-        const decompressedData = pako.ungzip(compressedData, { to: "string" });
-
-        return JSON.parse(decompressedData);
     } catch (error) {
-        console.error(`Failed to fetch or decode JSON.gz from ${url}:`, error);
-        return null;
-    }
-}
-
-async function fetchJson(url) {
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`Failed to fetch JSON from ${url}:`, error);
-        return null;
-    }
-}
-
-// JSONデータを非同期で取得
-async function loadData() {
-    const elements = await fetchJsonGz("../../data/phenotype/male_infertility.json.gz");
-    const map_symbol_to_id = await fetchJson("../../data/marker_symbol_accession_id.json");
-
-    return { elements, map_symbol_to_id };
-}
-
-// 使用するデータを取得して初期化
-async function loadData() {
-    window.elements = await fetchJsonGz("../../data/phenotype/male_infertility.json.gz");
-    window.map_symbol_to_id = await fetchJson("../../data/marker_symbol_accession_id.json");
-
-    if (!window.elements || !window.map_symbol_to_id) {
-        console.error("Failed to load data.");
-        return;
+        console.error("Failed to load or decode JSON.gz:", error);
     }
 
-    initializeCytoscape();
-    setupEventListeners();
-};
-
-(async function () {
-    await loadData();
+    return result;
 })();
 
-console.log("await response") // ! デバッグ用 DEBUG
+const map_symbol_to_id = (function () {
+    const req = new XMLHttpRequest();
+    let result = null;
+    req.onreadystatechange = function () {
+        if (req.readyState === 4 && req.status === 200) {
+            result = JSON.parse(req.responseText);
+        }
+    };
+    req.open("GET", "../../data/marker_symbol_accession_id.json", false);
 
-// Cytoscape の初期化関数
-function initializeCytoscape() {
-    if (!window.elements) {
-        console.error("Cytoscape initialization failed: window.elements is undefined.");
-        return;
-    }
-
-
-    // `window.elements` がロードされた後に `nodeSizes` と `edgeSizes` を計算
-    const nodeSizes = window.elements
-        .filter(ele => ele.data.node_color !== undefined)
-        .map(ele => ele.data.node_color);
-
-    const edgeSizes = window.elements
-        .filter(ele => ele.data.edge_size !== undefined)
-        .map(ele => ele.data.edge_size);
-
-    const nodeMin = nodeSizes.length ? Math.min(...nodeSizes) : 0;
-    const nodeMax = nodeSizes.length ? Math.max(...nodeSizes) : 1;
-    const edgeMin = edgeSizes.length ? Math.min(...edgeSizes) : 0;
-    const edgeMax = edgeSizes.length ? Math.max(...edgeSizes) : 1;
-
-    const cy = cytoscape({
-        container: document.querySelector('.cy'),
-        elements: window.elements,
-        style: [
-            {
-                selector: 'node',
-                style: {
-                    'label': 'data(label)',
-                    'text-valign': 'center',
-                    'text-halign': 'center',
-                    'font-size': '20px',
-                    'width': 15,
-                    'height': 15,
-                    'background-color': function (ele) {
-                        const color_value = scaleValue(ele.data('node_color'), nodeMin, nodeMax, 1, 10);
-                        return getColorForValue(color_value);
-                    }
-                }
-            },
-            {
-                selector: 'edge',
-                style: {
-                    'curve-style': 'bezier',
-                    'text-rotation': 'autorotate',
-                    'width': function (ele) {
-                        return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2);
-                    }
-                }
-            }
-        ],
-        layout: getLayoutOptions()
-    });
-
-    // グローバル変数に保存
-    window.cy = cy;
-    window.nodeMin = nodeMin;
-    window.nodeMax = nodeMax;
-    window.edgeMin = edgeMin;
-    window.edgeMax = edgeMax;
-}
-
-function setupEventListeners() {
-    const filterGenotypeForm = document.getElementById('genotype-filter-form');
-    const filterSexForm = document.getElementById('sex-filter-form');
-
-    filterGenotypeForm.addEventListener('change', filterElementsByGenotypeAndSex);
-    filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
-}
+    req.send(null);
+    return result;
+})();
 
 
 // ############################################################################
 // 遺伝型・正特異的フィルタリング関数
 // ############################################################################
 
+// フィルターフォームの取得
+const filterGenotypeForm = document.getElementById('genotype-filter-form');
+const filterSexForm = document.getElementById('sex-filter-form');
+
 // フィルタリング関数（遺伝型 + 性別）
 function filterElementsByGenotypeAndSex() {
-    if (!window.elements) return; // `window.elements` がロードされる前に呼ばれないようにする
+    const checkedGenotypes = Array.from(filterGenotypeForm.querySelectorAll('input:checked')).map(input => input.value);
+    const checkedSexs = Array.from(filterSexForm.querySelectorAll('input:checked')).map(input => input.value);
 
-    const checkedGenotypes = Array.from(document.querySelectorAll('#genotype-filter-form input:checked'))
-        .map(input => input.value);
-    const checkedSexs = Array.from(document.querySelectorAll('#sex-filter-form input:checked'))
-        .map(input => input.value);
+    // console.log("検索キーワード (Genotype):", checkedGenotypes);
+    // console.log("検索キーワード (Sex):", checkedSexs);
 
-    let targetElements = [...window.elements];
+    let targetElements;
 
-    if (!(checkedSexs.includes("Female") && checkedSexs.includes("Male"))) {
-        targetElements = targetElements.map(item => {
+    // もし checkedSexs に Female と Male の両方が含まれていたら、性別のフィルターを無効にし、遺伝型のフィルターのみ適用
+    if (checkedSexs.includes("Female") && checkedSexs.includes("Male")) {
+        // console.log("性別フィルター無効（遺伝型のみ適用）");
+        targetElements = elements;
+    } else {
+        targetElements = elements.map(item => {
             if (item.data.annotation) {
-                const filteredAnnotations = item.data.annotation.filter(annotation =>
-                    checkedSexs.some(sex => annotation.includes(`${sex}`))
-                );
+                const filteredAnnotations = item.data.annotation.filter(annotation => {
+                    const sexMatch = checkedSexs.some(sex => annotation.includes(`${sex}`));
+                    return sexMatch;
+                });
+
                 return { ...item, data: { ...item.data, annotation: filteredAnnotations } };
             }
             return item;
         }).filter(item => item.data.annotation && item.data.annotation.length > 0);
     }
 
+    // 遺伝型フィルターの適用
     let filteredElements = targetElements.map(item => {
         if (item.data.annotation) {
-            const filteredAnnotations = item.data.annotation.filter(annotation =>
-                checkedGenotypes.some(genotype => annotation.includes(`${genotype}`))
-            );
+            const filteredAnnotations = item.data.annotation.filter(annotation => {
+                const genotypeMatch = checkedGenotypes.some(genotype => annotation.includes(`${genotype}`));
+                return genotypeMatch;
+            });
+
             return { ...item, data: { ...item.data, annotation: filteredAnnotations } };
         }
         return item;
     }).filter(item => item.data.annotation && item.data.annotation.length > 0);
 
-    filteredElements = filteredElements.filter(item =>
-        item.data.annotation.some(annotation => annotation.includes(target_phenotype))
-    ).filter(item => item.data.annotation && item.data.annotation.length > 2);
+    // console.log("標的表現型:", target_phenotype);
+    // `target_phenotype` をまったく含まないノードを削除
+    filteredElements = filteredElements.filter(item => {
+        if (item.data.annotation) {
+            return item.data.annotation.some(annotation => annotation.includes(target_phenotype));
+        }
+        return false;
+    }).filter(item => item.data.annotation && item.data.annotation.length > 2); // 3つ以上の表現型を持つノードのみを表示
 
     // Cytoscape のデータを更新
-    window.cy.elements().remove();
-    window.cy.add(filteredElements);
-    filterElements();
+    cy.elements().remove(); // 既存の要素を削除
+    cy.add(filteredElements); // 新しい要素を追加
+    filterElements(); // 孤立ノードを削除
 }
 
-// フィルターフォームの取得
-const filterGenotypeForm = document.getElementById('genotype-filter-form');
-const filterSexForm = document.getElementById('sex-filter-form');
 
 // フォーム変更時にフィルタリング関数を実行
 filterGenotypeForm.addEventListener('change', filterElementsByGenotypeAndSex);
@@ -206,6 +121,14 @@ filterSexForm.addEventListener('change', filterElementsByGenotypeAndSex);
 // ############################################################################
 // Normalize node color and edge sizes
 // ############################################################################
+
+const nodeSizes = elements.filter(ele => ele.data.node_color !== undefined).map(ele => ele.data.node_color);
+const edgeSizes = elements.filter(ele => ele.data.edge_size !== undefined).map(ele => ele.data.edge_size);
+
+const nodeMin = Math.min(...nodeSizes);
+const nodeMax = Math.max(...nodeSizes);
+const edgeMin = Math.min(...edgeSizes);
+const edgeMax = Math.max(...edgeSizes);
 
 function scaleToOriginalRange(value, minValue, maxValue) {
     return minValue + (value - 1) * (maxValue - minValue) / 9;
@@ -236,23 +159,6 @@ function getColorForValue(value) {
 // Cytoscape Elements handler
 // ############################################################################
 
-let currentLayout = 'cose';
-
-const nodeRepulsionMin = 1;
-const nodeRepulsionMax = 10000;
-let nodeRepulsionValue = scaleToOriginalRange(
-    parseFloat(document.getElementById('nodeRepulsion-slider').value),
-    nodeRepulsionMin,
-    nodeRepulsionMax
-);
-
-const componentSpacingMin = 1;
-const componentSpacingMax = 200;
-let componentSpacingValue = scaleToOriginalRange(
-    parseFloat(this.value),
-    componentSpacingMin,
-    componentSpacingMax
-);
 
 function getLayoutOptions() {
     return {
@@ -262,11 +168,63 @@ function getLayoutOptions() {
     };
 }
 
+let currentLayout = 'cose';
+
+const nodeRepulsionMin = 1;
+const nodeRepulsionMax = 10000;
+const componentSpacingMin = 1;
+const componentSpacingMax = 200;
+
+let nodeRepulsionValue = scaleToOriginalRange(
+    parseFloat(document.getElementById('nodeRepulsion-slider').value),
+    nodeRepulsionMin,
+    nodeRepulsionMax
+);
+
+let componentSpacingValue = scaleToOriginalRange(
+    parseFloat(this.value),
+    componentSpacingMin,
+    componentSpacingMax
+);
+
+const cy = cytoscape({
+    container: document.querySelector('.cy'),
+    elements: elements,
+    style: [
+        {
+            selector: 'node',
+            style: {
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'font-size': '20px',
+                'width': 15,
+                'height': 15,
+                'background-color': function (ele) {
+                    const color_value = scaleValue(ele.data('node_color'), nodeMin, nodeMax, 1, 10);
+                    return getColorForValue(color_value);
+                }
+            }
+        },
+        {
+            selector: 'edge',
+            style: {
+                'curve-style': 'bezier',
+                'text-rotation': 'autorotate',
+                'width': function (ele) {
+                    return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2);
+                }
+            }
+        }
+    ],
+    layout: getLayoutOptions()
+});
+
 
 // レイアウトが変更されるか、フィルタリングが実行された際に連結成分を計算する関数
 function calculateConnectedComponents() {
     // 表示されている要素のみを取得
-    const visibleElements = window.cy.elements(':visible');
+    const visibleElements = cy.elements(':visible');
 
     // 可視状態の要素で連結成分を計算
     const connectedComponents = visibleElements.components();
@@ -296,7 +254,7 @@ function calculateConnectedComponents() {
 }
 
 // レイアウト変更後にイベントリスナーを設定
-window.cy.on('layoutstop', function () {
+cy.on('layoutstop', function () {
     calculateConnectedComponents();
 });
 
@@ -358,16 +316,14 @@ function getNodeTooltipText(data) {
         ? data.annotation.map(anno => '・ ' + anno).join('<br>')
         : '・ ' + data.annotation;
 
-    const geneId = window.map_symbol_to_id?.[data.label] ?? null;
-    const url_impc = geneId ? `https://www.mousephenotype.org/data/genes/${geneId}` : "#"; // データがない場合はリンクを無効化
-    // const url_impc = `https://www.mousephenotype.org/data/genes/${window.map_symbol_to_id[data.label]}`;
+    const url_impc = `https://www.mousephenotype.org/data/genes/${map_symbol_to_id[data.label]}`;
     return `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.label} KO mice</a></b><br>` + annotations;
 }
 
 // Function: Generate tooltip text for an edge
 function getEdgeTooltipText(data) {
-    const sourceNode = window.cy.getElementById(data.source).data('label');
-    const targetNode = window.cy.getElementById(data.target).data('label');
+    const sourceNode = cy.getElementById(data.source).data('label');
+    const targetNode = cy.getElementById(data.target).data('label');
     const annotations = Array.isArray(data.annotation)
         ? data.annotation.map(anno => '・ ' + anno).join('<br>')
         : '・ ' + data.annotation;
@@ -377,8 +333,8 @@ function getEdgeTooltipText(data) {
 
 // Function: Calculate the midpoint of an edge
 function getEdgeMidpoint(sourceId, targetId) {
-    const sourcePos = window.cy.getElementById(sourceId).renderedPosition();
-    const targetPos = window.cy.getElementById(targetId).renderedPosition();
+    const sourcePos = cy.getElementById(sourceId).renderedPosition();
+    const targetPos = cy.getElementById(targetId).renderedPosition();
     return {
         x: (sourcePos.x + targetPos.x) / 2,
         y: (sourcePos.y + targetPos.y) / 2
@@ -386,7 +342,7 @@ function getEdgeMidpoint(sourceId, targetId) {
 }
 
 // Main Cytoscape event listener
-window.cy.on('tap', 'node, edge', function (event) {
+cy.on('tap', 'node, edge', function (event) {
     const data = event.target.data();
     let tooltipText = '';
     let pos;
@@ -412,7 +368,7 @@ window.cy.on('tap', 'node, edge', function (event) {
 
 
 // Hide tooltip when tapping on background
-window.cy.on('tap', function (event) {
+cy.on('tap', function (event) {
     // If the clicked element is not a node or edge, remove the tooltip
     if (event.target === cy) {
         document.querySelectorAll('.cy-tooltip').forEach(function (el) {
@@ -431,7 +387,7 @@ window.cy.on('tap', function (event) {
 // --------------------------------------------------------
 document.getElementById('layout-dropdown').addEventListener('change', function () {
     currentLayout = this.value;
-    window.cy.layout({ name: currentLayout }).run();
+    cy.layout({ name: currentLayout }).run();
 });
 
 // --------------------------------------------------------
@@ -449,6 +405,23 @@ noUiSlider.create(edgeSlider, {
 });
 
 
+// <!-- REMOVE FROM THIS LINE IF BINARY -->
+
+// --------------------------------------------------------
+// Initialization of the Slider for Phenotypes severity
+// --------------------------------------------------------
+
+const nodeSlider = document.getElementById('filter-node-slider');
+noUiSlider.create(nodeSlider, {
+    start: [1, 10],
+    connect: true,
+    range: {
+        'min': 1,
+        'max': 10
+    },
+    step: 1
+});
+// <!-- REMOVE TO THIS LINE -->
 
 
 // --------------------------------------------------------
@@ -458,24 +431,27 @@ noUiSlider.create(edgeSlider, {
 let nodeSliderValues = [1, 10];
 
 function filterElements() {
+    // <!-- REMOVE FROM THIS LINE IF BINARY -->
+    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat);
+    // <!-- REMOVE TO THIS LINE -->
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
-    const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], window.nodeMin, window.nodeMax);
-    const nodeMaxValue = scaleToOriginalRange(nodeSliderValues[1], window.nodeMin, window.nodeMax);
-    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], window.edgeMin, window.edgeMax);
-    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], window.edgeMin, window.edgeMax);
+    const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
+    const nodeMaxValue = scaleToOriginalRange(nodeSliderValues[1], nodeMin, nodeMax);
+    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax);
+    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax);
 
     // Filter nodes based on color
-    window.cy.nodes().forEach(function (node) {
+    cy.nodes().forEach(function (node) {
         const nodeColor = node.data('node_color');
         node.style('display', (nodeColor >= nodeMinValue && nodeColor <= nodeMaxValue) ? 'element' : 'none');
     });
 
     // Filter edges based on size
-    window.cy.edges().forEach(function (edge) {
+    cy.edges().forEach(function (edge) {
         const edgeSize = edge.data('edge_size');
-        const sourceNode = window.cy.getElementById(edge.data('source'));
-        const targetNode = window.cy.getElementById(edge.data('target'));
+        const sourceNode = cy.getElementById(edge.data('source'));
+        const targetNode = cy.getElementById(edge.data('target'));
 
         if (sourceNode.style('display') === 'element' && targetNode.style('display') === 'element' &&
             edgeSize >= edgeMinValue && edgeSize <= edgeMaxValue) {
@@ -486,7 +462,7 @@ function filterElements() {
     });
 
     // After filtering, remove nodes with no connected visible edges
-    window.cy.nodes().forEach(function (node) {
+    cy.nodes().forEach(function (node) {
         const connectedEdges = node.connectedEdges().filter(edge => edge.style('display') === 'element');
         if (connectedEdges.length === 0) {
             node.style('display', 'none');  // Hide node if no connected edges
@@ -494,7 +470,7 @@ function filterElements() {
     });
 
     // Reapply layout after filtering
-    window.cy.layout(getLayoutOptions()).run();
+    cy.layout(getLayoutOptions()).run();
 }
 
 // --------------------------------------------------------
@@ -508,6 +484,13 @@ edgeSlider.noUiSlider.on('update', function (values) {
 });
 
 
+// <!-- REMOVE FROM THIS LINE IF BINARY -->
+nodeSlider.noUiSlider.on('update', function (values) {
+    const intValues = values.map(value => Math.round(value));
+    document.getElementById('node-color-value').textContent = intValues.join(' - ');
+    filterElements();
+});
+// <!-- REMOVE TO THIS LINE -->
 
 
 // ############################################################################
@@ -530,7 +513,7 @@ noUiSlider.create(fontSizeSlider, {
 fontSizeSlider.noUiSlider.on('update', function (value) {
     const intValues = Math.round(value);
     document.getElementById('font-size-value').textContent = intValues;
-    window.cy.style().selector('node').style('font-size', intValues + 'px').update();
+    cy.style().selector('node').style('font-size', intValues + 'px').update();
 });
 
 // --------------------------------------------------------
@@ -549,7 +532,7 @@ noUiSlider.create(edgeWidthSlider, {
 edgeWidthSlider.noUiSlider.on('update', function (value) {
     const intValues = Math.round(value);
     document.getElementById('edge-width-value').textContent = intValues;
-    window.cy.style().selector('edge').style('width', function (ele) {
+    cy.style().selector('edge').style('width', function (ele) {
         return scaleValue(ele.data('edge_size'), edgeMin, edgeMax, 0.5, 2) * intValues;
     }).update();
 });
@@ -572,7 +555,7 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
     nodeRepulsionValue = scaleToOriginalRange(parseFloat(intValues), nodeRepulsionMin, nodeRepulsionMax);
     componentSpacingValue = scaleToOriginalRange(parseFloat(intValues), componentSpacingMin, componentSpacingMax);
     document.getElementById('node-repulsion-value').textContent = intValues;
-    window.cy.layout(getLayoutOptions()).run();
+    cy.layout(getLayoutOptions()).run();
 });
 
 
@@ -585,7 +568,7 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
 // --------------------------------------------------------
 
 document.getElementById('export-png').addEventListener('click', function () {
-    const pngContent = window.cy.png({
+    const pngContent = cy.png({
         scale: 6.25,   // Scale to achieve 600 DPI
         full: true     // Set to true to include the entire graph, even the offscreen parts
     });

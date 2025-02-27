@@ -2,16 +2,6 @@
 // Input handler
 // ############################################################################
 
-// const elements = [
-//     { data: { id: 'Nanog', label: 'Nanog', annotation: ['hoge', 'hooo'], node_color: 50, } },
-//     { data: { id: 'Pou5f1', label: 'Pou5f1', annotation: 'fuga', node_color: 100, } },
-//     { data: { id: 'Sox2', label: 'Sox2', annotation: 'foo', node_color: 3, } },
-//     { data: { source: 'Nanog', target: 'Pou5f1', annotation: ['Foo', 'FooBar'], edge_size: 5 } },
-//     { data: { source: 'Nanog', target: 'Sox2', annotation: 'FooBar', edge_size: 1 } },
-//     { data: { source: 'Sox2', target: 'Pou5f1', annotation: 'FooBar', edge_size: 10 } },
-// ];
-
-// const map_symbol_to_id = { 'Nanog': 'MGI:97281', 'Pou5f1': 'MGI:1352748', 'Sox2': 'MGI:96217' };
 
 const target_phenotype = 'preweaning_lethality,_incomplete_penetrance'.replace(/_/g, " ");
 
@@ -415,6 +405,23 @@ noUiSlider.create(edgeSlider, {
 });
 
 
+// <!-- REMOVE FROM THIS LINE IF BINARY -->
+
+// --------------------------------------------------------
+// Initialization of the Slider for Phenotypes severity
+// --------------------------------------------------------
+
+const nodeSlider = document.getElementById('filter-node-slider');
+noUiSlider.create(nodeSlider, {
+    start: [1, 10],
+    connect: true,
+    range: {
+        'min': 1,
+        'max': 10
+    },
+    step: 1
+});
+// <!-- REMOVE TO THIS LINE -->
 
 
 // --------------------------------------------------------
@@ -424,6 +431,9 @@ noUiSlider.create(edgeSlider, {
 let nodeSliderValues = [1, 10];
 
 function filterElements() {
+    // <!-- REMOVE FROM THIS LINE IF BINARY -->
+    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat);
+    // <!-- REMOVE TO THIS LINE -->
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
     const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
@@ -474,6 +484,13 @@ edgeSlider.noUiSlider.on('update', function (values) {
 });
 
 
+// <!-- REMOVE FROM THIS LINE IF BINARY -->
+nodeSlider.noUiSlider.on('update', function (values) {
+    const intValues = values.map(value => Math.round(value));
+    document.getElementById('node-color-value').textContent = intValues.join(' - ');
+    filterElements();
+});
+// <!-- REMOVE TO THIS LINE -->
 
 
 // ############################################################################
