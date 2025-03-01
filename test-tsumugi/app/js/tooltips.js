@@ -24,16 +24,17 @@ function createTooltip(event, cy, map_symbol_to_id) {
 
         pos = event.target.renderedPosition();
     } else if (event.target.isEdge()) {
-        const sourceNode = cy.getElementById(data.source).data('label');
-        const targetNode = cy.getElementById(data.target).data('label');
+        const sourceNode = cy.$id(data.source).data('label');
+        const targetNode = cy.$id(data.target).data('label');
+
         const annotations = Array.isArray(data.annotation)
             ? data.annotation.map(anno => '・ ' + anno).join('<br>')
             : '・ ' + data.annotation;
 
         tooltipText = `<b>Shared phenotypes of ${sourceNode} and ${targetNode} KOs</b><br>` + annotations;
 
-        const sourcePos = cy.getElementById(data.source).renderedPosition();
-        const targetPos = cy.getElementById(data.target).renderedPosition();
+        const sourcePos = cy.$id(data.source).renderedPosition();
+        const targetPos = cy.$id(data.target).renderedPosition();
         pos = { x: (sourcePos.x + targetPos.x) / 2, y: (sourcePos.y + targetPos.y) / 2 };
     }
 
