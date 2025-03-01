@@ -4,7 +4,7 @@ import { calculateConnectedComponents } from './components.js';
 // PNG Exporter
 // --------------------------------------------------------
 
-export function exportGraphAsPNG(cy) {
+export function exportGraphAsPNG(cy, file_name) {
     const pngContent = cy.png({
         scale: 6.25,   // Scale to achieve 600 DPI
         full: true     // Set to true to include the entire graph, even the offscreen parts
@@ -12,7 +12,7 @@ export function exportGraphAsPNG(cy) {
 
     const a = document.createElement('a');
     a.href = pngContent;
-    a.download = 'TSUMUGI_XXX_genesymbol.png';
+    a.download = `${file_name}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -23,7 +23,7 @@ export function exportGraphAsPNG(cy) {
 // CSV Exporter
 // --------------------------------------------------------
 
-export function exportGraphAsCSV(cy) {
+export function exportGraphAsCSV(cy, file_name) {
     // calculateConnectedComponentsを利用して連結成分を取得
     const connected_component = calculateConnectedComponents(cy);
 
@@ -47,7 +47,7 @@ export function exportGraphAsCSV(cy) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'TSUMUGI_XXX_genesymbol.csv';
+    a.download = `${file_name}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

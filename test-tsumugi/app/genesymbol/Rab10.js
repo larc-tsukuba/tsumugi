@@ -395,12 +395,14 @@ cy.on('tap', function (event) {
 // Exporter
 // ############################################################################
 
+const file_name = 'TSUMUGI_Rab10';
+
 // --------------------------------------------------------
 // PNG Exporter
 // --------------------------------------------------------
 
 document.getElementById('export-png').addEventListener('click', function () {
-    exportGraphAsPNG(cy);
+    exportGraphAsPNG(cy, file_name);
 });
 
 
@@ -409,5 +411,5 @@ document.getElementById('export-png').addEventListener('click', function () {
 // --------------------------------------------------------
 
 document.getElementById('export-csv').addEventListener('click', function () {
-    exportGraphAsCSV(cy);
+    exportGraphAsCSV(cy, file_name);
 });
