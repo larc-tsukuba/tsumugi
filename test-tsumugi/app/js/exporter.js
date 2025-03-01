@@ -2,7 +2,7 @@
 // PNG Exporter
 // --------------------------------------------------------
 
-function exportGraphAsPNG() {
+export function exportGraphAsPNG() {
     const pngContent = cy.png({
         scale: 6.25,   // Scale to achieve 600 DPI
         full: true     // Set to true to include the entire graph, even the offscreen parts
@@ -21,7 +21,7 @@ function exportGraphAsPNG() {
 // CSV Exporter
 // --------------------------------------------------------
 
-function exportGraphAsCSV() {
+export function exportGraphAsCSV() {
     // calculateConnectedComponentsを利用して連結成分を取得
     const connected_component = calculateConnectedComponents();
 
