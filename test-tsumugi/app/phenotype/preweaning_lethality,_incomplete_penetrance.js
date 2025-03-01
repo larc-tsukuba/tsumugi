@@ -234,21 +234,6 @@ cy.on('layoutstop', function () {
 });
 
 // ############################################################################
-// Tooltip handling
-// ############################################################################
-
-// Show tooltip on tap
-cy.on('tap', 'node, edge', showTooltip);
-
-// Hide tooltip when tapping on background
-cy.on('tap', function (event) {
-    if (event.target === cy) {
-        removeTooltips();
-    }
-});
-
-
-// ############################################################################
 // Control panel handler
 // ############################################################################
 
@@ -401,6 +386,21 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
     cy.layout(getLayoutOptions()).run();
 });
 
+// ############################################################################
+// Tooltip handling
+// ############################################################################
+
+// Show tooltip on tap
+cy.on('tap', 'node, edge', function (event) {
+    showTooltip(event, map_symbol_to_id);
+});
+
+// Hide tooltip when tapping on background
+cy.on('tap', function (event) {
+    if (event.target === cy) {
+        removeTooltips();
+    }
+});
 
 // ############################################################################
 // Exporter

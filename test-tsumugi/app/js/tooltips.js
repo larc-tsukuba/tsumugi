@@ -8,7 +8,7 @@ export function removeTooltips() {
 }
 
 // Function to create tooltip content for nodes and edges
-function createTooltip(event) {
+function createTooltip(event, map_symbol_to_id) {
     const data = event.target.data();
     let tooltipText = '';
     let pos;
@@ -18,11 +18,11 @@ function createTooltip(event) {
             ? data.annotation.map(anno => '・ ' + anno).join('<br>')
             : '・ ' + data.annotation;
 
-        const url_impc = `https://www.mousephenotype.org/data/genes/${map_symbol_to_id[data.label]}`;
+        const geneID = map_symbol_to_id[data.label] || "UNKNOWN"; // undefined の場合に備える
+        const url_impc = `https://www.mousephenotype.org/data/genes/${geneID}`;
         tooltipText = `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.label} KO mice</a></b><br>` + annotations;
 
         pos = event.target.renderedPosition();
-
     } else if (event.target.isEdge()) {
         const sourceNode = cy.getElementById(data.source).data('label');
         const targetNode = cy.getElementById(data.target).data('label');
@@ -41,10 +41,10 @@ function createTooltip(event) {
 }
 
 // Function to show tooltip
-export function showTooltip(event) {
+export function showTooltip(event, map_symbol_to_id) {
     removeTooltips(); // Remove existing tooltips
 
-    const { tooltipText, pos } = createTooltip(event);
+    const { tooltipText, pos } = createTooltip(event, map_symbol_to_id);
 
     const tooltip = document.createElement('div');
     tooltip.classList.add('cy-tooltip');
