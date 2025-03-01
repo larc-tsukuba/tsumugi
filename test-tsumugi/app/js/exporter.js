@@ -1,4 +1,4 @@
-import { calculateConnectedComponents } from 'components.js';
+import { calculateConnectedComponents } from './components.js';
 
 // --------------------------------------------------------
 // PNG Exporter
