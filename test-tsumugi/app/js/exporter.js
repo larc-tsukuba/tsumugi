@@ -1,8 +1,10 @@
+import { calculateConnectedComponents } from 'components.js';
+
 // --------------------------------------------------------
 // PNG Exporter
 // --------------------------------------------------------
 
-export function exportGraphAsPNG() {
+export function exportGraphAsPNG(cy) {
     const pngContent = cy.png({
         scale: 6.25,   // Scale to achieve 600 DPI
         full: true     // Set to true to include the entire graph, even the offscreen parts
@@ -21,9 +23,9 @@ export function exportGraphAsPNG() {
 // CSV Exporter
 // --------------------------------------------------------
 
-export function exportGraphAsCSV() {
+export function exportGraphAsCSV(cy) {
     // calculateConnectedComponentsを利用して連結成分を取得
-    const connected_component = calculateConnectedComponents();
+    const connected_component = calculateConnectedComponents(cy);
 
     // CSVのヘッダー行
     let csvContent = "cluster,gene,phenotypes\n";
