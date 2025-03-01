@@ -392,7 +392,7 @@ nodeRepulsionSlider.noUiSlider.on('update', function (value) {
 
 // Show tooltip on tap
 cy.on('tap', 'node, edge', function (event) {
-    showTooltip(event, map_symbol_to_id);
+    showTooltip(event, cy, map_symbol_to_id);
 });
 
 // Hide tooltip when tapping on background

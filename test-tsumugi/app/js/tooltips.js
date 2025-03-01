@@ -8,7 +8,7 @@ export function removeTooltips() {
 }
 
 // Function to create tooltip content for nodes and edges
-function createTooltip(event, map_symbol_to_id) {
+function createTooltip(event, cy, map_symbol_to_id) {
     const data = event.target.data();
     let tooltipText = '';
     let pos;
@@ -41,10 +41,10 @@ function createTooltip(event, map_symbol_to_id) {
 }
 
 // Function to show tooltip
-export function showTooltip(event, map_symbol_to_id) {
+export function showTooltip(event, cy, map_symbol_to_id) {
     removeTooltips(); // Remove existing tooltips
 
-    const { tooltipText, pos } = createTooltip(event, map_symbol_to_id);
+    const { tooltipText, pos } = createTooltip(event, cy, map_symbol_to_id);
 
     const tooltip = document.createElement('div');
     tooltip.classList.add('cy-tooltip');
