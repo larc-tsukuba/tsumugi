@@ -94,17 +94,3 @@ function enableTooltipDrag(tooltip) {
         tooltip.style.cursor = 'move';
     });
 }
-
-// ############################################################
-// Event Listeners
-// ############################################################
-
-// Show tooltip on tap
-cy.on('tap', 'node, edge', showTooltip);
-
-// Hide tooltip when tapping on background
-cy.on('tap', function (event) {
-    if (event.target === cy) {
-        removeTooltips();
-    }
-});
