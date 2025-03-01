@@ -182,7 +182,7 @@ let nodeRepulsionValue = scaleToOriginalRange(
 );
 
 let componentSpacingValue = scaleToOriginalRange(
-    parseFloat(this.value),
+    parseFloat(document.getElementById('nodeRepulsion-slider').value),
     componentSpacingMin,
     componentSpacingMax
 );

@@ -168,7 +168,7 @@ const componentSpacingMin = 1;
 const componentSpacingMax = 200;
 
 let nodeRepulsionValue = scaleToOriginalRange(parseFloat(document.getElementById('nodeRepulsion-slider').value), nodeRepulsionMin, nodeRepulsionMax);
-let componentSpacingValue = scaleToOriginalRange(parseFloat(this.value), componentSpacingMin, componentSpacingMax);
+let componentSpacingValue = scaleToOriginalRange(parseFloat(document.getElementById('nodeRepulsion-slider').value), componentSpacingMin, componentSpacingMax);
 
 const cy = cytoscape({
     container: document.querySelector('.cy'),
