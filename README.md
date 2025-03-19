@@ -4,7 +4,7 @@
     </a>
 </p>
 
-This is the deployment repository for TSUMUGI.
+This is the deployment repository for [TSUMUGI](https://larc-tsukuba.github.io/tsumugi/).
 
 Please submit issues [here](https://github.com/akikuno/TSUMUGI-dev/issues).
 
