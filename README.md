@@ -6,5 +6,5 @@
 
 This is the deployment repository for [TSUMUGI](https://larc-tsukuba.github.io/tsumugi/).
 
-Please submit issues [here](https://github.com/akikuno/TSUMUGI-dev/issues).
+Please submit feedback and requests [here](https://forms.gle/TpLeatthUBLN57PU6).
 
