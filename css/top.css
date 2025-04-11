@@ -25,8 +25,9 @@ button,
 input,
 textarea,
 select {
-    font-family: inherit;
+    color: inherit;
     font-size: inherit;
+    font-family: inherit;
 }
 
 /* Subtitle styling */
@@ -103,8 +104,16 @@ ul.suggestions li:hover {
 /* Tab styling */
 /* -------------------------------------------------------- */
 
+.Tab-container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 5px;
+    flex-direction: row;
+}
+
 button.Tab {
-    flex: 1;
+    flex: 0 1 auto;
     padding: 10px 20px;
     margin: 0 5px;
     border: 2px solid #ff7800;
@@ -114,6 +123,11 @@ button.Tab {
     transition: background-color 0.3s ease, color 0.3s ease;
     position: relative;
     z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 button.Tab:hover {
@@ -234,4 +248,29 @@ footer a {
 
 footer a:hover {
     text-decoration: underline;
+}
+
+
+
+/* ======================================================== */
+/* Responsive design for mobile devices */
+/* ======================================================== */
+@media screen and (max-width: 600px) {
+    body {
+        font-size: 1em;
+        padding-top: 20px;
+    }
+
+    form {
+        width: 90%;
+    }
+
+
+    button.Tab {
+        padding: 8px 10px;
+        font-size: 0.9em;
+        margin: 2px;
+        min-width: 30px;
+        white-space: nowrap;
+    }
 }

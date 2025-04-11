@@ -1,6 +1,7 @@
 import { exportGraphAsPNG, exportGraphAsCSV } from "../js/exporter.js";
 import { scaleToOriginalRange, scaleValue, getColorForValue } from "../js/value_scaler.js";
 import { removeTooltips, showTooltip } from "../js/tooltips.js";
+import { calculateConnectedComponents } from "../js/components.js";
 import { createSlider } from "../js/slider.js";
 import { filterElementsByGenotypeAndSex } from "../js/filters.js";
 import { loadJSONGz, loadJSON } from "../js/data_loader.js";
@@ -10,33 +11,41 @@ import { setupGeneSearch } from "../js/searcher.js";
 // Input handler
 // ############################################################################
 
+// REMOVE_FROM_THIS_LINE
 
+// const elements = [
+//     { data: { id: 'Nanog', label: 'Nanog', annotation: ['hoge', 'hooo'], node_color: 50, } },
+//     { data: { id: 'Pou5f1', label: 'Pou5f1', annotation: 'fuga', node_color: 100, } },
+//     { data: { id: 'Sox2', label: 'Sox2', annotation: 'foo', node_color: 3, } },
+//     { data: { source: 'Nanog', target: 'Pou5f1', annotation: ['Foo', 'FooBar'], edge_size: 5 } },
+//     { data: { source: 'Nanog', target: 'Sox2', annotation: 'FooBar', edge_size: 1 } },
+//     { data: { source: 'Sox2', target: 'Pou5f1', annotation: 'FooBar', edge_size: 10 } },
+// ];
 
-const url_elements = "../../data/phenotype/abnormal_urinary_bladder_morphology.json.gz";
-const url_map_symbol_to_id = "../../data/marker_symbol_accession_id.json";
+// const map_symbol_to_id = { 'Nanog': 'MGI:97281', 'Pou5f1': 'MGI:1352748', 'Sox2': 'MGI:96217' };
 
-const elements = loadJSONGz(url_elements);
-const map_symbol_to_id = loadJSON(url_map_symbol_to_id);
+// REMOVE_TO_THIS_LINE
+
+const elements = loadJSONGz('../../data/phenotype/abnormal_urinary_bladder_morphology.json.gz');
+const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 
 // ############################################################################
 // Cytoscape Elements handler
 // ############################################################################
 
-const nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
-const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
+let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
+let nodeMin = Math.min(...nodeSizes);
+let nodeMax = Math.max(...nodeSizes);
 
-const nodeMin = Math.min(...nodeSizes);
-const nodeMax = Math.max(...nodeSizes);
+
+
+const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
 const edgeMin = Math.min(...edgeSizes);
 const edgeMax = Math.max(...edgeSizes);
 
-function getLayoutOptions() {
-    return {
-        name: currentLayout,
-        nodeRepulsion: nodeRepulsionValue,
-        componentSpacing: componentSpacingValue,
-    };
-}
+// ############################################################################
+// Cytoscapeの初期化
+// ############################################################################
 
 let currentLayout = "cose";
 
@@ -56,6 +65,14 @@ let componentSpacingValue = scaleToOriginalRange(
     componentSpacingMin,
     componentSpacingMax,
 );
+
+function getLayoutOptions() {
+    return {
+        name: currentLayout,
+        nodeRepulsion: nodeRepulsionValue,
+        componentSpacing: componentSpacingValue,
+    };
+}
 
 const cy = cytoscape({
     container: document.querySelector(".cy"),
@@ -107,12 +124,32 @@ document.getElementById("layout-dropdown").addEventListener("change", function (
 // =============================================================================
 
 // --------------------------------------------------------
+// Edge size slider for Phenotypes similarity
+// --------------------------------------------------------
+
+// Initialization of the Edge size slider
+const edgeSlider = document.getElementById("filter-edge-slider");
+noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
+
+
+
+// Update the slider values when the sliders are moved
+edgeSlider.noUiSlider.on("update", function (values) {
+    const intValues = values.map((value) => Math.round(value));
+    document.getElementById("edge-size-value").textContent = intValues.join(" - ");
+    filterByNodeColorAndEdgeSize();
+});
+
+
+
+// --------------------------------------------------------
 // Modify the filter function to handle upper and lower bounds
 // --------------------------------------------------------
 
-let nodeSliderValues = [1, 10];
+function filterByNodeColorAndEdgeSize() {
+    let nodeSliderValues = [1, 10];
 
-function filterElements() {
+
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
     const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
@@ -156,34 +193,16 @@ function filterElements() {
     cy.layout(getLayoutOptions()).run();
 }
 
-// --------------------------------------------------------
-// Initialization and Update of the Slider for Phenotypes similarity
-// --------------------------------------------------------
-const edgeSlider = document.getElementById("filter-edge-slider");
-noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
-
-
-// --------------------------------------------------------
-// Update of the Slider
-// --------------------------------------------------------
-
-edgeSlider.noUiSlider.on("update", function (values) {
-    const intValues = values.map((value) => Math.round(value));
-    document.getElementById("edge-size-value").textContent = intValues.join(" - ");
-    filterElements();
-});
-
 
 // =============================================================================
 // 遺伝型・正特異的フィルタリング関数
 // =============================================================================
 
-let target_phenotype = "";
-target_phenotype = "abnormal_urinary_bladder_morphology".replace(/_/g, " ");
+let target_phenotype = "abnormal urinary bladder morphology";
 
 // フィルタリング関数のラッパー
 function applyFiltering() {
-    filterElementsByGenotypeAndSex(elements, target_phenotype, cy, filterElements);
+    filterElementsByGenotypeAndSex(elements, target_phenotype, cy, filterByNodeColorAndEdgeSize);
 }
 
 // フォーム変更時にフィルタリング関数を実行
@@ -229,6 +248,17 @@ createSlider("edge-width-slider", 5, 1, 10, 1, (intValues) => {
 // --------------------------------------------------------
 // Slider for Node repulsion
 // --------------------------------------------------------
+
+const layoutDropdown = document.getElementById("layout-dropdown");
+const nodeRepulsionContainer = document.getElementById("node-repulsion-container");
+
+function updateNodeRepulsionVisibility() {
+    const selectedLayout = layoutDropdown.value;
+    nodeRepulsionContainer.style.display = selectedLayout === "cose" ? "block" : "none";
+}
+
+updateNodeRepulsionVisibility();
+layoutDropdown.addEventListener("change", updateNodeRepulsionVisibility);
 
 createSlider("nodeRepulsion-slider", 5, 1, 10, 1, (intValues) => {
     nodeRepulsionValue = scaleToOriginalRange(intValues, nodeRepulsionMin, nodeRepulsionMax);

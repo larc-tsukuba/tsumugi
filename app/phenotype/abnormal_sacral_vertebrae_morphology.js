@@ -1,6 +1,7 @@
 import { exportGraphAsPNG, exportGraphAsCSV } from "../js/exporter.js";
 import { scaleToOriginalRange, scaleValue, getColorForValue } from "../js/value_scaler.js";
 import { removeTooltips, showTooltip } from "../js/tooltips.js";
+import { calculateConnectedComponents } from "../js/components.js";
 import { createSlider } from "../js/slider.js";
 import { filterElementsByGenotypeAndSex } from "../js/filters.js";
 import { loadJSONGz, loadJSON } from "../js/data_loader.js";
@@ -25,32 +26,84 @@ import { setupGeneSearch } from "../js/searcher.js";
 
 // REMOVE_TO_THIS_LINE
 
-
-const url_elements = "../../data/phenotype/abnormal_sacral_vertebrae_morphology.json.gz";
-const url_map_symbol_to_id = "../../data/marker_symbol_accession_id.json";
-
-const elements = loadJSONGz(url_elements);
-const map_symbol_to_id = loadJSON(url_map_symbol_to_id);
+const elements = loadJSONGz('../../data/phenotype/abnormal_sacral_vertebrae_morphology.json.gz');
+const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 
 // ############################################################################
 // Cytoscape Elements handler
 // ############################################################################
 
-const nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
-const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
+let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
+let nodeMin = Math.min(...nodeSizes);
+let nodeMax = Math.max(...nodeSizes);
 
-const nodeMin = Math.min(...nodeSizes);
-const nodeMax = Math.max(...nodeSizes);
+// ==========================================================
+// スライダーを上限値・下限値に合わせても、最低１つの遺伝子ペアが可視化できるようにする. Issue #72
+// ==========================================================
+
+// Step 1: node_color を ID にマップし、ランクをつける
+const nodeColorMap = new Map();
+elements.forEach(ele => {
+    if (ele.data.node_color !== undefined && ele.data.id !== undefined) {
+        nodeColorMap.set(ele.data.id, ele.data.node_color);
+    }
+});
+
+// ランク付け
+const sortedNodeColors = [...new Set([...nodeColorMap.values()])].sort((a, b) => a - b);
+const nodeColorToRank = new Map();
+sortedNodeColors.forEach((val, idx) => {
+    nodeColorToRank.set(val, idx + 1);  // ランクは1スタート
+});
+
+// Step 2: エッジごとに source/target のランク合計と、元の値を保存
+const edgeRankPairs = [];
+
+elements.forEach(ele => {
+    if (ele.data.source && ele.data.target) {
+        const sourceVal = nodeColorMap.get(ele.data.source);
+        const targetVal = nodeColorMap.get(ele.data.target);
+
+        if (sourceVal !== undefined && targetVal !== undefined) {
+            const sourceRank = nodeColorToRank.get(sourceVal);
+            const targetRank = nodeColorToRank.get(targetVal);
+            const rankSum = sourceRank + targetRank;
+
+            edgeRankPairs.push({
+                rankSum: rankSum,
+                minVal: Math.min(sourceVal, targetVal),
+                maxVal: Math.max(sourceVal, targetVal),
+            });
+        }
+    }
+});
+
+// Step 3: 最小スコアのペアの max → nodeMin、最大スコアのペアの min → nodeMax
+const minRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum < b.rankSum ? a : b));
+const maxRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum > b.rankSum ? a : b));
+
+nodeMin = minRankEdge.maxVal;
+nodeMax = maxRankEdge.minVal;
+
+// Step 4: node_color を min/max にクリップ
+elements.forEach(ele => {
+    if (ele.data.node_color !== undefined) {
+        if (ele.data.node_color <= nodeMin) {
+            ele.data.node_color = nodeMin;
+        } else if (ele.data.node_color >= nodeMax) {
+            ele.data.node_color = nodeMax;
+        }
+    }
+});
+
+
+const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
 const edgeMin = Math.min(...edgeSizes);
 const edgeMax = Math.max(...edgeSizes);
 
-function getLayoutOptions() {
-    return {
-        name: currentLayout,
-        nodeRepulsion: nodeRepulsionValue,
-        componentSpacing: componentSpacingValue,
-    };
-}
+// ############################################################################
+// Cytoscapeの初期化
+// ############################################################################
 
 let currentLayout = "cose";
 
@@ -70,6 +123,14 @@ let componentSpacingValue = scaleToOriginalRange(
     componentSpacingMin,
     componentSpacingMax,
 );
+
+function getLayoutOptions() {
+    return {
+        name: currentLayout,
+        nodeRepulsion: nodeRepulsionValue,
+        componentSpacing: componentSpacingValue,
+    };
+}
 
 const cy = cytoscape({
     container: document.querySelector(".cy"),
@@ -121,15 +182,44 @@ document.getElementById("layout-dropdown").addEventListener("change", function (
 // =============================================================================
 
 // --------------------------------------------------------
+// Edge size slider for Phenotypes similarity
+// --------------------------------------------------------
+
+// Initialization of the Edge size slider
+const edgeSlider = document.getElementById("filter-edge-slider");
+noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
+
+// Initialization of the Node color slider
+const nodeSlider = document.getElementById("filter-node-slider");
+noUiSlider.create(nodeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
+
+
+// Update the slider values when the sliders are moved
+edgeSlider.noUiSlider.on("update", function (values) {
+    const intValues = values.map((value) => Math.round(value));
+    document.getElementById("edge-size-value").textContent = intValues.join(" - ");
+    filterByNodeColorAndEdgeSize();
+});
+
+// Update the slider values when the sliders are moved
+nodeSlider.noUiSlider.on("update", function (values) {
+    const intValues = values.map((value) => Math.round(value));
+    document.getElementById("node-color-value").textContent = intValues.join(" - ");
+    filterByNodeColorAndEdgeSize();
+});
+
+
+
+
+// --------------------------------------------------------
 // Modify the filter function to handle upper and lower bounds
 // --------------------------------------------------------
 
-let nodeSliderValues = [1, 10];
+function filterByNodeColorAndEdgeSize() {
+    let nodeSliderValues = [1, 10];
 
-function filterElements() {
-    // REMOVE_FROM_THIS_LINE
-    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat);
-    // REMOVE_TO_THIS_LINE
+    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat); // REMOVE_THIS_LINE_IF_BINARY_PHENOTYPE
+
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
     const nodeMinValue = scaleToOriginalRange(nodeSliderValues[0], nodeMin, nodeMax);
@@ -173,48 +263,17 @@ function filterElements() {
     cy.layout(getLayoutOptions()).run();
 }
 
-// --------------------------------------------------------
-// Initialization and Update of the Slider for Phenotypes similarity
-// --------------------------------------------------------
-const edgeSlider = document.getElementById("filter-edge-slider");
-noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
 
-// REMOVE_FROM_THIS_LINE
-// --------------------------------------------------------
-// Initialization of the Slider for Phenotypes severity
-// --------------------------------------------------------
-const nodeSlider = document.getElementById("filter-node-slider");
-noUiSlider.create(nodeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
-// REMOVE_TO_THIS_LINE
-
-// --------------------------------------------------------
-// Update of the Slider
-// --------------------------------------------------------
-
-edgeSlider.noUiSlider.on("update", function (values) {
-    const intValues = values.map((value) => Math.round(value));
-    document.getElementById("edge-size-value").textContent = intValues.join(" - ");
-    filterElements();
-});
-
-// REMOVE_FROM_THIS_LINE
-nodeSlider.noUiSlider.on("update", function (values) {
-    const intValues = values.map((value) => Math.round(value));
-    document.getElementById("node-color-value").textContent = intValues.join(" - ");
-    filterElements();
-});
-// REMOVE_TO_THIS_LINE
 
 // =============================================================================
 // 遺伝型・正特異的フィルタリング関数
 // =============================================================================
 
-let target_phenotype = "";
-target_phenotype = "abnormal_sacral_vertebrae_morphology".replace(/_/g, " ");
+let target_phenotype = "abnormal sacral vertebrae morphology";
 
 // フィルタリング関数のラッパー
 function applyFiltering() {
-    filterElementsByGenotypeAndSex(elements, target_phenotype, cy, filterElements);
+    filterElementsByGenotypeAndSex(elements, target_phenotype, cy, filterByNodeColorAndEdgeSize);
 }
 
 // フォーム変更時にフィルタリング関数を実行
@@ -260,6 +319,17 @@ createSlider("edge-width-slider", 5, 1, 10, 1, (intValues) => {
 // --------------------------------------------------------
 // Slider for Node repulsion
 // --------------------------------------------------------
+
+const layoutDropdown = document.getElementById("layout-dropdown");
+const nodeRepulsionContainer = document.getElementById("node-repulsion-container");
+
+function updateNodeRepulsionVisibility() {
+    const selectedLayout = layoutDropdown.value;
+    nodeRepulsionContainer.style.display = selectedLayout === "cose" ? "block" : "none";
+}
+
+updateNodeRepulsionVisibility();
+layoutDropdown.addEventListener("change", updateNodeRepulsionVisibility);
 
 createSlider("nodeRepulsion-slider", 5, 1, 10, 1, (intValues) => {
     nodeRepulsionValue = scaleToOriginalRange(intValues, nodeRepulsionMin, nodeRepulsionMax);
