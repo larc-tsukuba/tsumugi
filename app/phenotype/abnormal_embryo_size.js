@@ -37,6 +37,64 @@ let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map(
 let nodeMin = Math.min(...nodeSizes);
 let nodeMax = Math.max(...nodeSizes);
 
+// ==========================================================
+// スライダーを上限値・下限値に合わせても、最低１つの遺伝子ペアが可視化できるようにする. Issue #72
+// ==========================================================
+
+// Step 1: node_color を ID にマップし、ランクをつける
+const nodeColorMap = new Map();
+elements.forEach(ele => {
+    if (ele.data.node_color !== undefined && ele.data.id !== undefined) {
+        nodeColorMap.set(ele.data.id, ele.data.node_color);
+    }
+});
+
+// ランク付け
+const sortedNodeColors = [...new Set([...nodeColorMap.values()])].sort((a, b) => a - b);
+const nodeColorToRank = new Map();
+sortedNodeColors.forEach((val, idx) => {
+    nodeColorToRank.set(val, idx + 1);  // ランクは1スタート
+});
+
+// Step 2: エッジごとに source/target のランク合計と、元の値を保存
+const edgeRankPairs = [];
+
+elements.forEach(ele => {
+    if (ele.data.source && ele.data.target) {
+        const sourceVal = nodeColorMap.get(ele.data.source);
+        const targetVal = nodeColorMap.get(ele.data.target);
+
+        if (sourceVal !== undefined && targetVal !== undefined) {
+            const sourceRank = nodeColorToRank.get(sourceVal);
+            const targetRank = nodeColorToRank.get(targetVal);
+            const rankSum = sourceRank + targetRank;
+
+            edgeRankPairs.push({
+                rankSum: rankSum,
+                minVal: Math.min(sourceVal, targetVal),
+                maxVal: Math.max(sourceVal, targetVal),
+            });
+        }
+    }
+});
+
+// Step 3: 最小スコアのペアの max → nodeMin、最大スコアのペアの min → nodeMax
+const minRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum < b.rankSum ? a : b));
+const maxRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum > b.rankSum ? a : b));
+
+nodeMin = minRankEdge.maxVal;
+nodeMax = maxRankEdge.minVal;
+
+// Step 4: node_color を min/max にクリップ
+elements.forEach(ele => {
+    if (ele.data.node_color !== undefined) {
+        if (ele.data.node_color <= nodeMin) {
+            ele.data.node_color = nodeMin;
+        } else if (ele.data.node_color >= nodeMax) {
+            ele.data.node_color = nodeMax;
+        }
+    }
+});
 
 
 const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
@@ -131,6 +189,9 @@ document.getElementById("layout-dropdown").addEventListener("change", function (
 const edgeSlider = document.getElementById("filter-edge-slider");
 noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
 
+// Initialization of the Node color slider
+const nodeSlider = document.getElementById("filter-node-slider");
+noUiSlider.create(nodeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
 
 
 // Update the slider values when the sliders are moved
@@ -139,6 +200,14 @@ edgeSlider.noUiSlider.on("update", function (values) {
     document.getElementById("edge-size-value").textContent = intValues.join(" - ");
     filterByNodeColorAndEdgeSize();
 });
+
+// Update the slider values when the sliders are moved
+nodeSlider.noUiSlider.on("update", function (values) {
+    const intValues = values.map((value) => Math.round(value));
+    document.getElementById("node-color-value").textContent = intValues.join(" - ");
+    filterByNodeColorAndEdgeSize();
+});
+
 
 
 
@@ -149,6 +218,7 @@ edgeSlider.noUiSlider.on("update", function (values) {
 function filterByNodeColorAndEdgeSize() {
     let nodeSliderValues = [1, 10];
 
+    nodeSliderValues = nodeSlider.noUiSlider.get().map(parseFloat); // REMOVE_THIS_LINE_IF_BINARY_PHENOTYPE
 
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(parseFloat);
 
@@ -194,20 +264,21 @@ function filterByNodeColorAndEdgeSize() {
 }
 
 
-// =============================================================================
-// 遺伝型・正特異的フィルタリング関数
-// =============================================================================
 
-let target_phenotype = "abnormal embryo size";
+// =============================================================================
+// 遺伝型・性差・ライフステージ特異的フィルタリング関数
+// =============================================================================
 
 // フィルタリング関数のラッパー
 function applyFiltering() {
-    filterElementsByGenotypeAndSex(elements, target_phenotype, cy, filterByNodeColorAndEdgeSize);
+    filterElementsByGenotypeAndSex(elements, cy, filterByNodeColorAndEdgeSize);
 }
 
 // フォーム変更時にフィルタリング関数を実行
 document.getElementById("genotype-filter-form").addEventListener("change", applyFiltering);
 document.getElementById("sex-filter-form").addEventListener("change", applyFiltering);
+document.getElementById("lifestage-filter-form").addEventListener("change", applyFiltering);
+
 
 // ############################################################################
 // Cytoscape's visualization setting
