@@ -40,36 +40,54 @@ let nodeMax = Math.max(...nodeSizes);
 
 
 const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
-const edgeMin = Math.min(...edgeSizes);
+
 // ============================================================================
-// edgeMaxの計算：
-// 1. node_color === 1 のノードに接続されたエッジの中で最大のedge_sizeを取得
-// 2. その値をedgeMaxとする
-// 3. その後、elementsのedge_sizeをedgeMaxを上限として調整
+// edgeMin/edgeMaxの計算：
+// 1. node_color === 1 のノードに接続されたエッジの中で最小/最大のedge_sizeを取得
+// 2. その値をedgeMin/edgeMaxとする
+// 3. その後、elementsのedge_sizeをedgeMin/edgeMaxを上限として調整
 // ============================================================================
 
-// node_color === 1 のノード(targetGene)を1つだけ取得
-const targetGene = elements.find((ele) => ele.data.node_color === 1);
-
-// targetGeneの ID (遺伝子シンボル)を取得
-const targetGeneId = targetGene?.data?.id;
-
-// targetGeneに接続されているエッジだけ抽出
-const connectedEdges = elements.filter((ele) => ele.data.source === targetGeneId || ele.data.target === targetGeneId);
-
-// そのエッジたちの edge_size を集めて最大値を取得
-const edgeSizesTargetGene = connectedEdges
-    .filter((edge) => edge.data.edge_size !== undefined)
-    .map((edge) => edge.data.edge_size);
-
-const edgeMax = Math.max(...edgeSizesTargetGene);
-
-// elementsに含まれる全edge_sizeの最大値を、edgeMaxを上限とする
-connectedEdges.forEach((edge) => {
-    if (edge.data.edge_size > edgeMax) {
-        edge.data.edge_size = edgeMax;
+function adjustConnectedEdgeSize(elements, mode = "max") {
+    if (!["max", "min"].includes(mode)) {
+        throw new Error("mode must be 'max' or 'min'");
     }
-});
+
+    // node_color === 1 のノードを1つ取得
+    const targetNode = elements.find(ele => ele.data.node_color === 1);
+    if (!targetNode) return undefined;
+
+    const targetId = targetNode.data.id;
+
+    // 対象ノードに接続されたエッジを取得
+    const connectedEdges = elements.filter(
+        ele => ele.data.source === targetId || ele.data.target === targetId
+    );
+
+    // 有効な edge_size を収集
+    const edgeSizes = connectedEdges
+        .filter(edge => edge.data.edge_size !== undefined)
+        .map(edge => edge.data.edge_size);
+
+    if (edgeSizes.length === 0) return undefined;
+
+    // 最小または最大を取得
+    const limit = mode === "max" ? Math.max(...edgeSizes) : Math.min(...edgeSizes);
+
+    // 上限または下限でedge_sizeを調整
+    connectedEdges.forEach(edge => {
+        if (mode === "max" && edge.data.edge_size > limit) {
+            edge.data.edge_size = limit;
+        } else if (mode === "min" && edge.data.edge_size < limit) {
+            edge.data.edge_size = limit;
+        }
+    });
+
+    return limit;
+}
+
+const edgeMax = adjustConnectedEdgeSize(elements, "max");
+const edgeMin = adjustConnectedEdgeSize(elements, "min");
 
 
 // ############################################################################
@@ -178,19 +196,19 @@ function filterByNodeColorAndEdgeSize() {
     const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax);
     const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax);
 
-    // 1. edge_size条件を満たすエッジを取得
+    // 1. edge_size 条件に一致するエッジを取得
     const visibleEdges = cy.edges().filter((edge) => {
         const edgeSize = edge.data("edge_size");
         return edgeSize >= edgeMinValue && edgeSize <= edgeMaxValue;
     });
 
-    // 2. 条件を満たしたエッジ＋そのエッジに接続しているノードたちを取得
+    // 2. 接続ノードを含めて対象エレメントとする
     const candidateElements = visibleEdges.union(visibleEdges.connectedNodes());
 
     // 3. 連結成分を取得
     const components = candidateElements.components();
 
-    // 4. 一旦すべて非表示にしてから…
+    // 4. 一旦すべて非表示
     cy.elements().forEach((ele) => ele.style("display", "none"));
 
     // 5. node_color === 1 を含むクラスタだけ表示
@@ -207,14 +225,15 @@ function filterByNodeColorAndEdgeSize() {
 }
 
 
-
 // =============================================================================
 // 遺伝型・性差・ライフステージ特異的フィルタリング関数
 // =============================================================================
 
+let target_phenotype = "";
+
 // フィルタリング関数のラッパー
 function applyFiltering() {
-    filterElementsByGenotypeAndSex(elements, cy, filterByNodeColorAndEdgeSize);
+    filterElementsByGenotypeAndSex(elements, cy, target_phenotype, filterByNodeColorAndEdgeSize);
 }
 
 // フォーム変更時にフィルタリング関数を実行
@@ -287,7 +306,7 @@ createSlider("nodeRepulsion-slider", 5, 1, 10, 1, (intValues) => {
 
 // Show tooltip on tap
 cy.on("tap", "node, edge", function (event) {
-    showTooltip(event, cy, map_symbol_to_id);
+    showTooltip(event, cy, map_symbol_to_id, target_phenotype);
 });
 
 // Hide tooltip when tapping on background
