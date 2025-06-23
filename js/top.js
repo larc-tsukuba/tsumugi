@@ -1,7 +1,7 @@
 // 検索モードの選択用変数 (初期状態を 'phenotype')
 let searchMode = "phenotype";
 
-const geneListPlaceHolder = "Asxl1\r\nRab10\r\nDdx46\r\nAp3b2\r\nKcnma1"; // プレースホルダーとして例を入力
+const geneListPlaceHolder = "Trappc11\r\nRab10\r\nInts8\r\nZfp39\r\nKcnma1"; // プレースホルダーとして例を入力
 
 // ====================================================================
 // タブ切り替え + searchMode の更新
@@ -68,17 +68,6 @@ function checkGeneListInput() {
     }
 }
 
-// 初期表示
-setSearchMode("phenotype");
-
-// タブボタンのクリックイベント
-document.querySelectorAll(".Tab").forEach((button) => {
-    button.addEventListener("click", () => setSearchMode(button.dataset.tab));
-});
-
-// Gene List のテキストエリアが変更されたらボタンを更新
-document.getElementById("geneList").addEventListener("input", checkGeneListInput);
-
 // ====================================================================
 // Fetch JSON data from the URL and assign to phenotypes
 // ====================================================================
@@ -103,6 +92,17 @@ let geneSymbolsLoaded = fetch(URL_GENE_SYMBOLS)
         }, {});
     })
     .catch((error) => console.error("Error fetching gene symbols:", error));
+
+// 初期表示
+setSearchMode("phenotype");
+
+// タブボタンのクリックイベント
+document.querySelectorAll(".Tab").forEach((button) => {
+    button.addEventListener("click", () => setSearchMode(button.dataset.tab));
+});
+
+// Gene List のテキストエリアが変更されたらボタンを更新
+document.getElementById("geneList").addEventListener("input", checkGeneListInput);
 
 // 両方のデータがロードされたことを確認する関数
 async function ensureDataLoaded() {

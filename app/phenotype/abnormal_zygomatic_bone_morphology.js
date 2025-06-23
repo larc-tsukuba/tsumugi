@@ -6,6 +6,7 @@ import { createSlider } from "../js/slider.js";
 import { filterElementsByGenotypeAndSex } from "../js/filters.js";
 import { loadJSONGz, loadJSON } from "../js/data_loader.js";
 import { setupGeneSearch } from "../js/searcher.js";
+import { highlightDiseaseAnnotation } from "../js/highlighter.js";
 
 // ############################################################################
 // Input handler
@@ -14,12 +15,12 @@ import { setupGeneSearch } from "../js/searcher.js";
 // REMOVE_FROM_THIS_LINE
 
 // const elements = [
-//     { data: { id: 'Nanog', label: 'Nanog', annotation: ['hoge', 'hooo'], node_color: 50, } },
-//     { data: { id: 'Pou5f1', label: 'Pou5f1', annotation: 'fuga', node_color: 100, } },
-//     { data: { id: 'Sox2', label: 'Sox2', annotation: 'foo', node_color: 3, } },
-//     { data: { source: 'Nanog', target: 'Pou5f1', annotation: ['Foo', 'FooBar'], edge_size: 5 } },
-//     { data: { source: 'Nanog', target: 'Sox2', annotation: 'FooBar', edge_size: 1 } },
-//     { data: { source: 'Sox2', target: 'Pou5f1', annotation: 'FooBar', edge_size: 10 } },
+//     { data: { id: 'Nanog', label: 'Nanog', phenotype: ['hoge', 'hooo'], node_color: 50, } },
+//     { data: { id: 'Pou5f1', label: 'Pou5f1', phenotype: 'fuga', node_color: 100, } },
+//     { data: { id: 'Sox2', label: 'Sox2', phenotype: 'foo', node_color: 3, } },
+//     { data: { source: 'Nanog', target: 'Pou5f1', phenotype: ['Foo', 'FooBar'], edge_size: 5 } },
+//     { data: { source: 'Nanog', target: 'Sox2', phenotype: 'FooBar', edge_size: 1 } },
+//     { data: { source: 'Sox2', target: 'Pou5f1', phenotype: 'FooBar', edge_size: 10 } },
 // ];
 
 // const map_symbol_to_id = { 'Nanog': 'MGI:97281', 'Pou5f1': 'MGI:1352748', 'Sox2': 'MGI:96217' };
@@ -34,8 +35,12 @@ const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 // ############################################################################
 
 let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
-let nodeMin = Math.min(...nodeSizes);
-let nodeMax = Math.max(...nodeSizes);
+let nodeColorMin = Math.min(...nodeSizes);  // 色表示用の元の範囲
+let nodeColorMax = Math.max(...nodeSizes);  // 色表示用の元の範囲
+
+// フィルタリング用の範囲（元の値をコピー）
+let nodeMin = nodeColorMin;
+let nodeMax = nodeColorMax;
 
 // ==========================================================
 // スライダーを上限値・下限値に合わせても、最低１つの遺伝子ペアが可視化できるようにする. Issue #72
@@ -82,16 +87,23 @@ elements.forEach(ele => {
 const minRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum < b.rankSum ? a : b));
 const maxRankEdge = edgeRankPairs.reduce((a, b) => (a.rankSum > b.rankSum ? a : b));
 
+// フィルタリング用の範囲のみ更新（色表示用は元の値を保持）
 nodeMin = minRankEdge.maxVal;
 nodeMax = maxRankEdge.minVal;
 
-// Step 4: node_color を min/max にクリップ
+// 色表示用の元の値は保持し、フィルタリング用の値を新しく追加
 elements.forEach(ele => {
     if (ele.data.node_color !== undefined) {
+        // 色表示用の元の値を保存
+        ele.data.original_node_color = ele.data.node_color;
+        
+        // フィルタリング用の値をクリップ
         if (ele.data.node_color <= nodeMin) {
-            ele.data.node_color = nodeMin;
+            ele.data.node_color_for_filter = nodeMin;
         } else if (ele.data.node_color >= nodeMax) {
-            ele.data.node_color = nodeMax;
+            ele.data.node_color_for_filter = nodeMax;
+        } else {
+            ele.data.node_color_for_filter = ele.data.node_color;
         }
     }
 });
@@ -146,7 +158,8 @@ const cy = cytoscape({
                 width: 15,
                 height: 15,
                 "background-color": function (ele) {
-                    const color_value = scaleValue(ele.data("node_color"), nodeMin, nodeMax, 1, 10);
+                    const originalColor = ele.data("original_node_color") || ele.data("node_color");
+                    const color_value = scaleValue(originalColor, nodeColorMin, nodeColorMax, 1, 10);
                     return getColorForValue(color_value);
                 },
             },
@@ -161,9 +174,58 @@ const cy = cytoscape({
                 },
             },
         },
+        {
+            selector: ".disease-highlight", // 疾患ハイライト用クラス
+            style: {
+                "border-width": 3,
+                "border-color": "#fc4c00",
+            },
+        },
+        {
+            selector: ".gene-highlight", // 遺伝子検索ハイライト用クラス
+            style: {
+                "color": "#028760",
+                "font-weight": "bold",
+            },
+        },
     ],
     layout: getLayoutOptions(),
 });
+
+
+// ★ デバッグ用：cyをグローバルに公開
+window.cy = cy;
+
+// ★ モバイル対応：Cytoscapeの表示問題を修正
+function handleMobileResize() {
+    if (cy) {
+        // モバイルでのレイアウト変更後にCytoscapeを再描画
+        setTimeout(() => {
+            cy.resize();
+            cy.fit();
+            cy.center();
+        }, 300);
+    }
+}
+
+// モバイルでの初期化完了後にCytoscapeを調整
+setTimeout(() => {
+    if (window.innerWidth <= 600) {
+        console.log("📱 Mobile device detected - applying mobile fixes");
+        cy.resize();
+        cy.fit();
+        cy.center();
+    }
+}, 500);
+
+// ウィンドウリサイズ時の対応
+window.addEventListener('resize', handleMobileResize);
+
+// オリエンテーション変更時の対応（モバイル）
+window.addEventListener('orientationchange', () => {
+    setTimeout(handleMobileResize, 500);
+});
+
 
 // ############################################################################
 // Control panel handler
@@ -229,23 +291,23 @@ function filterByNodeColorAndEdgeSize() {
 
     // 1. node_color 範囲に基づきノードを表示/非表示
     cy.nodes().forEach((node) => {
-        const nodeColor = node.data("node_color");
-        const isVisible = nodeColor >= nodeMinValue && nodeColor <= nodeMaxValue;
+        const nodeColorForFilter = node.data("node_color_for_filter") || node.data("node_color");
+        const isVisible = nodeColorForFilter >= Math.min(nodeMinValue, nodeMaxValue) && nodeColorForFilter <= Math.max(nodeMinValue, nodeMaxValue);
         node.style("display", isVisible ? "element" : "none");
     });
 
     // 2. edge_size + 表現型数の条件でエッジを表示/非表示
     cy.edges().forEach((edge) => {
         const edgeSize = edge.data("edge_size");
-        const sharedPhenotypes = edge.data("annotation") || [];
+        const sharedPhenotypes = edge.data("phenotype") || [];
         const sourceVisible = cy.getElementById(edge.data("source")).style("display") === "element";
         const targetVisible = cy.getElementById(edge.data("target")).style("display") === "element";
 
         const isVisible =
             sourceVisible &&
             targetVisible &&
-            edgeSize >= edgeMinValue &&
-            edgeSize <= edgeMaxValue &&
+            edgeSize >= Math.min(edgeMinValue, edgeMaxValue) &&
+            edgeSize <= Math.max(edgeMinValue, edgeMaxValue) &&
             sharedPhenotypes.length >= 2; // 2つ以上の表現型を持つエッジのみ表示
 
         edge.style("display", isVisible ? "element" : "none");
@@ -280,6 +342,10 @@ document.getElementById("genotype-filter-form").addEventListener("change", apply
 document.getElementById("sex-filter-form").addEventListener("change", applyFiltering);
 document.getElementById("lifestage-filter-form").addEventListener("change", applyFiltering);
 
+// =============================================================================	
+// ヒト疾患ハイライト	
+// =============================================================================	
+highlightDiseaseAnnotation({ cy });
 
 // ############################################################################
 // Cytoscape's visualization setting

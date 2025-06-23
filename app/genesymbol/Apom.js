@@ -6,6 +6,7 @@ import { createSlider } from "../js/slider.js";
 import { filterElementsByGenotypeAndSex } from "../js/filters.js";
 import { loadJSONGz, loadJSON } from "../js/data_loader.js";
 import { setupGeneSearch } from "../js/searcher.js";
+import { highlightDiseaseAnnotation } from "../js/highlighter.js";
 
 // ############################################################################
 // Input handler
@@ -14,12 +15,12 @@ import { setupGeneSearch } from "../js/searcher.js";
 // REMOVE_FROM_THIS_LINE
 
 // const elements = [
-//     { data: { id: 'Nanog', label: 'Nanog', annotation: ['hoge', 'hooo'], node_color: 50, } },
-//     { data: { id: 'Pou5f1', label: 'Pou5f1', annotation: 'fuga', node_color: 100, } },
-//     { data: { id: 'Sox2', label: 'Sox2', annotation: 'foo', node_color: 3, } },
-//     { data: { source: 'Nanog', target: 'Pou5f1', annotation: ['Foo', 'FooBar'], edge_size: 5 } },
-//     { data: { source: 'Nanog', target: 'Sox2', annotation: 'FooBar', edge_size: 1 } },
-//     { data: { source: 'Sox2', target: 'Pou5f1', annotation: 'FooBar', edge_size: 10 } },
+//     { data: { id: 'Nanog', label: 'Nanog', phenotype: ['hoge', 'hooo'], node_color: 50, } },
+//     { data: { id: 'Pou5f1', label: 'Pou5f1', phenotype: 'fuga', node_color: 100, } },
+//     { data: { id: 'Sox2', label: 'Sox2', phenotype: 'foo', node_color: 3, } },
+//     { data: { source: 'Nanog', target: 'Pou5f1', phenotype: ['Foo', 'FooBar'], edge_size: 5 } },
+//     { data: { source: 'Nanog', target: 'Sox2', phenotype: 'FooBar', edge_size: 1 } },
+//     { data: { source: 'Sox2', target: 'Pou5f1', phenotype: 'FooBar', edge_size: 10 } },
 // ];
 
 // const map_symbol_to_id = { 'Nanog': 'MGI:97281', 'Pou5f1': 'MGI:1352748', 'Sox2': 'MGI:96217' };
@@ -34,8 +35,12 @@ const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 // ############################################################################
 
 let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
-let nodeMin = Math.min(...nodeSizes);
-let nodeMax = Math.max(...nodeSizes);
+let nodeColorMin = Math.min(...nodeSizes);  // 色表示用の元の範囲
+let nodeColorMax = Math.max(...nodeSizes);  // 色表示用の元の範囲
+
+// フィルタリング用の範囲（元の値をコピー）
+let nodeMin = nodeColorMin;
+let nodeMax = nodeColorMax;
 
 
 
@@ -135,7 +140,8 @@ const cy = cytoscape({
                 width: 15,
                 height: 15,
                 "background-color": function (ele) {
-                    const color_value = scaleValue(ele.data("node_color"), nodeMin, nodeMax, 1, 10);
+                    const originalColor = ele.data("original_node_color") || ele.data("node_color");
+                    const color_value = scaleValue(originalColor, nodeColorMin, nodeColorMax, 1, 10);
                     return getColorForValue(color_value);
                 },
             },
@@ -150,9 +156,58 @@ const cy = cytoscape({
                 },
             },
         },
+        {
+            selector: ".disease-highlight", // 疾患ハイライト用クラス
+            style: {
+                "border-width": 3,
+                "border-color": "#fc4c00",
+            },
+        },
+        {
+            selector: ".gene-highlight", // 遺伝子検索ハイライト用クラス
+            style: {
+                "color": "#028760",
+                "font-weight": "bold",
+            },
+        },
     ],
     layout: getLayoutOptions(),
 });
+
+
+// ★ デバッグ用：cyをグローバルに公開
+window.cy = cy;
+
+// ★ モバイル対応：Cytoscapeの表示問題を修正
+function handleMobileResize() {
+    if (cy) {
+        // モバイルでのレイアウト変更後にCytoscapeを再描画
+        setTimeout(() => {
+            cy.resize();
+            cy.fit();
+            cy.center();
+        }, 300);
+    }
+}
+
+// モバイルでの初期化完了後にCytoscapeを調整
+setTimeout(() => {
+    if (window.innerWidth <= 600) {
+        console.log("📱 Mobile device detected - applying mobile fixes");
+        cy.resize();
+        cy.fit();
+        cy.center();
+    }
+}, 500);
+
+// ウィンドウリサイズ時の対応
+window.addEventListener('resize', handleMobileResize);
+
+// オリエンテーション変更時の対応（モバイル）
+window.addEventListener('orientationchange', () => {
+    setTimeout(handleMobileResize, 500);
+});
+
 
 // ############################################################################
 // Control panel handler
@@ -196,27 +251,72 @@ function filterByNodeColorAndEdgeSize() {
     const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax);
     const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax);
 
-    // 1. edge_size 条件に一致するエッジを取得
-    const visibleEdges = cy.edges().filter((edge) => {
-        const edgeSize = edge.data("edge_size");
-        return edgeSize >= edgeMinValue && edgeSize <= edgeMaxValue;
-    });
-
-    // 2. 接続ノードを含めて対象エレメントとする
-    const candidateElements = visibleEdges.union(visibleEdges.connectedNodes());
-
-    // 3. 連結成分を取得
-    const components = candidateElements.components();
-
-    // 4. 一旦すべて非表示
+    // 1. 一旦すべて非表示
     cy.elements().forEach((ele) => ele.style("display", "none"));
 
-    // 5. node_color === 1 を含むクラスタだけ表示
-    components.forEach((comp) => {
-        const hasColor1 = comp.nodes().some((node) => node.data("node_color") === 1);
-        if (hasColor1) {
-            comp.nodes().forEach((node) => node.style("display", "element"));
-            comp.edges().forEach((edge) => edge.style("display", "element"));
+    // 2. edge_size 条件に一致するエッジのみ表示
+    cy.edges().forEach((edge) => {
+        const edgeSize = edge.data("edge_size");
+        const isVisible = edgeSize >= Math.min(edgeMinValue, edgeMaxValue) && edgeSize <= Math.max(edgeMinValue, edgeMaxValue);
+        edge.style("display", isVisible ? "element" : "none");
+    });
+
+    // 3. 表示されているエッジとその接続ノードから連結成分を計算
+    const visibleEdges = cy.edges().filter(edge => edge.style("display") === "element");
+    const candidateElements = visibleEdges.union(visibleEdges.connectedNodes());
+    const components = candidateElements.components();
+
+    // 4. 標的遺伝子と直接接続されているノードのみを特定
+    const targetGene = "Apom";
+    const targetNode = cy.getElementById(targetGene);
+    
+    if (targetNode.length === 0) {
+        return;
+    }
+
+    // 5. 標的遺伝子を表示
+    targetNode.style("display", "element");
+
+    // 6. 標的遺伝子と直接接続されているノードを特定
+    const directlyConnectedNodes = new Set([targetGene]);
+    
+    // まず標的遺伝子と直接接続されているノードを特定
+    cy.edges().forEach((edge) => {
+        if (edge.style("display") === "element") {
+            const source = edge.data("source");
+            const target = edge.data("target");
+            
+            // 標的遺伝子が関与するエッジから接続ノードを特定
+            if (source === targetGene) {
+                directlyConnectedNodes.add(target);
+            } else if (target === targetGene) {
+                directlyConnectedNodes.add(source);
+            }
+        }
+    });
+
+    // 7. 直接接続されたノード間のすべてのエッジとノードを表示
+    cy.edges().forEach((edge) => {
+        if (edge.style("display") === "element") {
+            const source = edge.data("source");
+            const target = edge.data("target");
+            
+            // 両端のノードが直接接続されたノードセットに含まれている場合は表示
+            if (directlyConnectedNodes.has(source) && directlyConnectedNodes.has(target)) {
+                edge.style("display", "element");
+            } else {
+                edge.style("display", "none");
+            }
+        }
+    });
+
+    // 8. 直接接続されたノードのみ表示
+    cy.nodes().forEach((node) => {
+        const nodeId = node.data("id");
+        if (directlyConnectedNodes.has(nodeId)) {
+            node.style("display", "element");
+        } else {
+            node.style("display", "none");
         }
     });
 
@@ -241,6 +341,10 @@ document.getElementById("genotype-filter-form").addEventListener("change", apply
 document.getElementById("sex-filter-form").addEventListener("change", applyFiltering);
 document.getElementById("lifestage-filter-form").addEventListener("change", applyFiltering);
 
+// =============================================================================	
+// ヒト疾患ハイライト	
+// =============================================================================	
+highlightDiseaseAnnotation({ cy });
 
 // ############################################################################
 // Cytoscape's visualization setting
