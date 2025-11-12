@@ -1,12 +1,14 @@
-import { exportGraphAsPNG, exportGraphAsCSV } from "../js/exporter.js";
-import { scaleToOriginalRange, scaleValue, getColorForValue } from "../js/value_scaler.js";
+import { exportGraphAsPNG, exportGraphAsJPG, exportGraphAsCSV, exportGraphAsGraphML } from "../js/exporter.js";
+import { scaleToOriginalRange, getColorForValue } from "../js/value_scaler.js";
 import { removeTooltips, showTooltip } from "../js/tooltips.js";
 import { calculateConnectedComponents } from "../js/components.js";
 import { createSlider } from "../js/slider.js";
 import { filterElementsByGenotypeAndSex } from "../js/filters.js";
 import { loadJSONGz, loadJSON } from "../js/data_loader.js";
-import { setupGeneSearch } from "../js/searcher.js";
+import { setupGeneSearch } from "../js/gene_searcher.js";
 import { highlightDiseaseAnnotation } from "../js/highlighter.js";
+import { setupPhenotypeSearch } from "../js/phenotype_searcher.js";
+import { initializeCentralitySystem, recalculateCentrality } from "../js/centrality.js";
 
 // ############################################################################
 // Input handler
@@ -27,7 +29,7 @@ import { highlightDiseaseAnnotation } from "../js/highlighter.js";
 
 // REMOVE_TO_THIS_LINE
 
-const elements = JSON.parse(localStorage.getItem("elements"));
+const elements = JSON.parse(localStorage.getItem('elements'));
 const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 
 // ############################################################################
@@ -35,20 +37,29 @@ const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 // ############################################################################
 
 let nodeSizes = elements.filter((ele) => ele.data.node_color !== undefined).map((ele) => ele.data.node_color);
-let nodeColorMin = Math.min(...nodeSizes); // 色表示用の元の範囲
-let nodeColorMax = Math.max(...nodeSizes); // 色表示用の元の範囲
+let nodeColorMin = Math.min(...nodeSizes);  // Range used for color styling
+let nodeColorMax = Math.max(...nodeSizes);  // Range used for color styling
 
-// フィルタリング用の範囲（元の値をコピー）
+// Copy the original range so filtering can adjust independently
 let nodeMin = nodeColorMin;
 let nodeMax = nodeColorMax;
 
+
+
 const edgeSizes = elements.filter((ele) => ele.data.edge_size !== undefined).map((ele) => ele.data.edge_size);
 
-const edgeMin = Math.min(...edgeSizes);
-const edgeMax = Math.max(...edgeSizes);
+const edgeMin = Math.min(...edgeSizes); const edgeMax = Math.max(...edgeSizes);
+
+function mapEdgeSizeToWidth(edgeSize) {
+    if (edgeMax === edgeMin) {
+        return 1.5;
+    }
+    const normalized = (edgeSize - edgeMin) / (edgeMax - edgeMin);
+    return 0.5 + normalized * 1.5;
+}
 
 // ############################################################################
-// Cytoscapeの初期化
+// Initialize Cytoscape
 // ############################################################################
 
 let currentLayout = "cose";
@@ -58,24 +69,48 @@ const nodeRepulsionMax = 10000;
 const componentSpacingMin = 1;
 const componentSpacingMax = 200;
 
+// Use different defaults for gene symbol pages only
+const isGeneSymbolPage = "JSON.parse(localStorage.getItem('elements'))".includes("genesymbol");
+const defaultNodeRepulsion = isGeneSymbolPage ? 8 : 5;
+
 let nodeRepulsionValue = scaleToOriginalRange(
-    parseFloat(document.getElementById("nodeRepulsion-slider").value),
+    defaultNodeRepulsion,
     nodeRepulsionMin,
     nodeRepulsionMax,
 );
 
 let componentSpacingValue = scaleToOriginalRange(
-    parseFloat(document.getElementById("nodeRepulsion-slider").value),
+    defaultNodeRepulsion,
     componentSpacingMin,
     componentSpacingMax,
 );
 
 function getLayoutOptions() {
-    return {
+    const baseOptions = {
         name: currentLayout,
         nodeRepulsion: nodeRepulsionValue,
         componentSpacing: componentSpacingValue,
     };
+
+    // Add enhanced options for COSE layout to prevent hairball effect (gene symbol pages only)
+    if (currentLayout === "cose" && isGeneSymbolPage) {
+        return {
+            ...baseOptions,
+            idealEdgeLength: 100,
+            nodeOverlap: 20,
+            padding: 30,
+            animate: true,
+            animationDuration: 500,
+            gravity: -1.2,
+            numIter: 1500,
+            initialTemp: 200,
+            coolingFactor: 0.95,
+            minTemp: 1.0,
+            edgeElasticity: 100,
+        };
+    }
+
+    return baseOptions;
 }
 
 const cy = cytoscape({
@@ -88,13 +123,12 @@ const cy = cytoscape({
                 label: "data(label)",
                 "text-valign": "center",
                 "text-halign": "center",
-                "font-size": "20px",
+                "font-size": isGeneSymbolPage ? "10px" : "20px",
                 width: 15,
                 height: 15,
                 "background-color": function (ele) {
                     const originalColor = ele.data("original_node_color") || ele.data("node_color");
-                    const color_value = scaleValue(originalColor, nodeColorMin, nodeColorMax, 1, 10);
-                    return getColorForValue(color_value);
+                    return getColorForValue(originalColor, nodeColorMin, nodeColorMax);
                 },
             },
         },
@@ -104,35 +138,43 @@ const cy = cytoscape({
                 "curve-style": "bezier",
                 "text-rotation": "autorotate",
                 width: function (ele) {
-                    return scaleValue(ele.data("edge_size"), edgeMin, edgeMax, 0.5, 2);
+                    return mapEdgeSizeToWidth(ele.data("edge_size"));
                 },
             },
         },
         {
-            selector: ".disease-highlight", // 疾患ハイライト用クラス
+            selector: ".disease-highlight", // Class used for disease highlighting
             style: {
-                "border-width": 3,
+                "border-width": 5,
                 "border-color": "#fc4c00",
             },
         },
         {
-            selector: ".gene-highlight", // 遺伝子検索ハイライト用クラス
+            selector: ".gene-highlight", // Class used when highlighting gene search hits
             style: {
-                color: "#028760",
+                "color": "#006400",
                 "font-weight": "bold",
+            },
+        },
+        {
+            selector: ".phenotype-highlight", // Class used for phenotype search highlighting
+            style: {
+                "border-width": 5,
+                "border-color": "#3FA7D6",
             },
         },
     ],
     layout: getLayoutOptions(),
 });
 
-// ★ デバッグ用：cyをグローバルに公開
+
+// * Expose cy globally for debugging convenience
 window.cy = cy;
 
-// ★ モバイル対応：Cytoscapeの表示問題を修正
+// * Improve Cytoscape rendering on mobile devices
 function handleMobileResize() {
     if (cy) {
-        // モバイルでのレイアウト変更後にCytoscapeを再描画
+        // Re-render Cytoscape after layout tweaks on mobile
         setTimeout(() => {
             cy.resize();
             cy.fit();
@@ -141,23 +183,23 @@ function handleMobileResize() {
     }
 }
 
-// モバイルでの初期化完了後にCytoscapeを調整
+// Adjust Cytoscape once initialization finishes on mobile
 setTimeout(() => {
     if (window.innerWidth <= 600) {
-        console.log("📱 Mobile device detected - applying mobile fixes");
         cy.resize();
         cy.fit();
         cy.center();
     }
 }, 500);
 
-// ウィンドウリサイズ時の対応
-window.addEventListener("resize", handleMobileResize);
+// Handle browser resize events
+window.addEventListener('resize', handleMobileResize);
 
-// オリエンテーション変更時の対応（モバイル）
-window.addEventListener("orientationchange", () => {
+// Handle orientation changes on mobile
+window.addEventListener('orientationchange', () => {
     setTimeout(handleMobileResize, 500);
 });
+
 
 // ############################################################################
 // Control panel handler
@@ -168,11 +210,11 @@ window.addEventListener("orientationchange", () => {
 // --------------------------------------------------------
 document.getElementById("layout-dropdown").addEventListener("change", function () {
     currentLayout = this.value;
-    cy.layout({ name: currentLayout }).run();
+    cy.layout(getLayoutOptions()).run();
 });
 
 // =============================================================================
-// スライダーによる初期化とフィルター関数
+// Slider initialization and filtering helpers
 // =============================================================================
 
 // --------------------------------------------------------
@@ -181,14 +223,35 @@ document.getElementById("layout-dropdown").addEventListener("change", function (
 
 // Initialization of the Edge size slider
 const edgeSlider = document.getElementById("filter-edge-slider");
-noUiSlider.create(edgeSlider, { start: [1, 10], connect: true, range: { min: 1, max: 10 }, step: 1 });
+const EDGE_SLIDER_MIN = 1;
+const EDGE_SLIDER_MAX = 100;
+let edgeSliderRangeMin = EDGE_SLIDER_MIN;
+let edgeSliderRangeMax = EDGE_SLIDER_MAX;
+let edgeSliderStartMin = EDGE_SLIDER_MIN;
+let edgeSliderStartMax = EDGE_SLIDER_MAX;
+
+if (isGeneSymbolPage) {
+    edgeSliderRangeMin = edgeMin;
+    edgeSliderRangeMax = edgeMax === edgeMin ? edgeMin + 1 : edgeMax;
+    edgeSliderStartMin = edgeSliderRangeMin;
+    edgeSliderStartMax = edgeSliderRangeMax;
+}
+
+noUiSlider.create(edgeSlider, {
+    start: [edgeSliderStartMin, edgeSliderStartMax],
+    connect: true,
+    range: { min: edgeSliderRangeMin, max: edgeSliderRangeMax },
+    step: 1,
+});
+
 
 // Update the slider values when the sliders are moved
 edgeSlider.noUiSlider.on("update", function (values) {
-    const intValues = values.map((value) => Math.round(value));
-    document.getElementById("edge-size-value").textContent = intValues.join(" - ");
+    const formattedValues = values.map((value) => Math.round(Number(value)));
+    document.getElementById("edge-size-value").textContent = formattedValues.join(" - ");
     filterByNodeColorAndEdgeSize();
 });
+
 
 // --------------------------------------------------------
 // Modify the filter function to handle upper and lower bounds
@@ -196,52 +259,45 @@ edgeSlider.noUiSlider.on("update", function (values) {
 
 function filterByNodeColorAndEdgeSize() {
     const edgeSliderValues = edgeSlider.noUiSlider.get().map(Number);
-    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax);
-    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax);
+    const edgeMinValue = scaleToOriginalRange(edgeSliderValues[0], edgeMin, edgeMax, 1, 100);
+    const edgeMaxValue = scaleToOriginalRange(edgeSliderValues[1], edgeMin, edgeMax, 1, 100);
 
-    // 1. 一旦すべてのノードを表示
+    // 1. Start by showing all nodes
     cy.nodes().forEach((node) => node.style("display", "element"));
 
-    // 2. edge_size 条件に基づきエッジの表示/非表示を設定
+    // 2. Show or hide edges based on the edge_size threshold
     cy.edges().forEach((edge) => {
         const edgeSize = edge.data("edge_size");
         const sourceVisible = cy.getElementById(edge.data("source")).style("display") === "element";
         const targetVisible = cy.getElementById(edge.data("target")).style("display") === "element";
-        const isVisible =
-            sourceVisible &&
-            targetVisible &&
-            edgeSize >= Math.min(edgeMinValue, edgeMaxValue) &&
-            edgeSize <= Math.max(edgeMinValue, edgeMaxValue);
+        const isVisible = sourceVisible && targetVisible && edgeSize >= Math.min(edgeMinValue, edgeMaxValue) && edgeSize <= Math.max(edgeMinValue, edgeMaxValue);
         edge.style("display", isVisible ? "element" : "none");
     });
 
-    // 3. node_color === 1 を含むクラスタだけ残す
+    // 3. Keep only the connected components that include a node with node_color === 1
     const components = calculateConnectedComponents(cy);
     const validComponents = components.filter((comp) =>
         Object.keys(comp).some((label) => {
             const node = cy.$(`node[label="${label}"]`);
             return node.data("node_color") === 1;
-        }),
+        })
     );
 
-    // 4. 対象クラスタのノードとエッジを再表示
+    // 4. Re-display nodes and edges for the retained components
     validComponents.forEach((comp) => {
         Object.keys(comp).forEach((label) => {
             const node = cy.$(`node[label="${label}"]`);
             node.style("display", "element");
             node.connectedEdges().forEach((edge) => {
                 const edgeSize = edge.data("edge_size");
-                if (
-                    edgeSize >= Math.min(edgeMinValue, edgeMaxValue) &&
-                    edgeSize <= Math.max(edgeMinValue, edgeMaxValue)
-                ) {
+                if (edgeSize >= Math.min(edgeMinValue, edgeMaxValue) && edgeSize <= Math.max(edgeMinValue, edgeMaxValue)) {
                     edge.style("display", "element");
                 }
             });
         });
     });
 
-    // 5. 孤立ノードを非表示にする
+    // 5. Hide isolated nodes
     cy.nodes().forEach((node) => {
         const visibleEdges = node.connectedEdges().filter((edge) => edge.style("display") === "element");
         if (visibleEdges.length === 0) {
@@ -249,29 +305,45 @@ function filterByNodeColorAndEdgeSize() {
         }
     });
 
-    // 6. レイアウト再適用
+    // 6. Re-run the layout
     cy.layout(getLayoutOptions()).run();
+
+
+    // 7. Refresh the phenotype list so only visible genes remain
+    if (window.refreshPhenotypeList) {
+        window.refreshPhenotypeList();
+    }
+    
+    // 8. Recalculate centrality for the filtered network
+    if (typeof window.recalculateCentrality === 'function') {
+        window.recalculateCentrality();
+    }
 }
 
+
 // =============================================================================
-// 遺伝型・性差・ライフステージ特異的フィルタリング関数
+// Genotype, sex, and life-stage specific filtering
 // =============================================================================
 
 let target_phenotype = "";
 
-// フィルタリング関数のラッパー
+// Wrapper function that applies the filters
 function applyFiltering() {
     filterElementsByGenotypeAndSex(elements, cy, target_phenotype, filterByNodeColorAndEdgeSize);
+    // Recalculate centrality after filtering
+    if (typeof window.recalculateCentrality === "function") {
+        window.recalculateCentrality();
+    }
 }
 
-// フォーム変更時にフィルタリング関数を実行
+// Trigger filtering when any form value changes
 document.getElementById("genotype-filter-form").addEventListener("change", applyFiltering);
 document.getElementById("sex-filter-form").addEventListener("change", applyFiltering);
 document.getElementById("lifestage-filter-form").addEventListener("change", applyFiltering);
 
-// =============================================================================
-// ヒト疾患ハイライト
-// =============================================================================
+// =============================================================================	
+// Highlight human disease annotations	
+// =============================================================================	
 highlightDiseaseAnnotation({ cy });
 
 // ############################################################################
@@ -279,16 +351,21 @@ highlightDiseaseAnnotation({ cy });
 // ############################################################################
 
 // --------------------------------------------------------
-// 遺伝子名検索
+// Gene name search
 // --------------------------------------------------------
 
 setupGeneSearch({ cy });
+
+// =============================================================================
+// Phenotype highlighting (with search support)
+// =============================================================================
+setupPhenotypeSearch({ cy, elements });
 
 // --------------------------------------------------------
 // Slider for Font size
 // --------------------------------------------------------
 
-createSlider("font-size-slider", 20, 1, 50, 1, (intValues) => {
+createSlider("font-size-slider", isGeneSymbolPage ? 10 : 20, 1, 50, 1, (intValues) => {
     document.getElementById("font-size-value").textContent = intValues;
     cy.style()
         .selector("node")
@@ -305,7 +382,8 @@ createSlider("edge-width-slider", 5, 1, 10, 1, (intValues) => {
     cy.style()
         .selector("edge")
         .style("width", function (ele) {
-            return scaleValue(ele.data("edge_size"), edgeMin, edgeMax, 0.5, 2) * intValues;
+            const baseWidth = mapEdgeSizeToWidth(ele.data("edge_size"));
+            return baseWidth * (intValues * 0.4);
         })
         .update();
 });
@@ -325,7 +403,7 @@ function updateNodeRepulsionVisibility() {
 updateNodeRepulsionVisibility();
 layoutDropdown.addEventListener("change", updateNodeRepulsionVisibility);
 
-createSlider("nodeRepulsion-slider", 5, 1, 10, 1, (intValues) => {
+createSlider("nodeRepulsion-slider", defaultNodeRepulsion, 1, 10, 1, (intValues) => {
     nodeRepulsionValue = scaleToOriginalRange(intValues, nodeRepulsionMin, nodeRepulsionMax);
     componentSpacingValue = scaleToOriginalRange(intValues, componentSpacingMin, componentSpacingMax);
     document.getElementById("node-repulsion-value").textContent = intValues;
@@ -333,12 +411,22 @@ createSlider("nodeRepulsion-slider", 5, 1, 10, 1, (intValues) => {
 });
 
 // ############################################################################
+// Initialize centrality system
+// ############################################################################
+
+// Initialize centrality system with dependencies
+initializeCentralitySystem(cy, createSlider);
+
+// Make recalculateCentrality available globally for use in filters
+window.recalculateCentrality = recalculateCentrality;
+
+// ############################################################################
 // Tooltip handling
 // ############################################################################
 
 // Show tooltip on tap
 cy.on("tap", "node, edge", function (event) {
-    showTooltip(event, cy, map_symbol_to_id, target_phenotype);
+    showTooltip(event, cy, map_symbol_to_id, target_phenotype, nodeColorMin, nodeColorMax, edgeMin, edgeMax, nodeSizes);
 });
 
 // Hide tooltip when tapping on background
@@ -358,14 +446,70 @@ const file_name = "TSUMUGI_geneList";
 // PNG Exporter
 // --------------------------------------------------------
 
-document.getElementById("export-png").addEventListener("click", function () {
-    exportGraphAsPNG(cy, file_name);
-});
+const exportPngButton = document.getElementById("export-png");
+if (exportPngButton) {
+    exportPngButton.addEventListener("click", function () {
+        exportGraphAsPNG(cy, file_name);
+    });
+}
+
+const exportJpgButton = document.getElementById("export-jpg");
+if (exportJpgButton) {
+    exportJpgButton.addEventListener("click", function () {
+        exportGraphAsJPG(cy, file_name);
+    });
+}
 
 // --------------------------------------------------------
 // CSV Exporter
 // --------------------------------------------------------
 
-document.getElementById("export-csv").addEventListener("click", function () {
-    exportGraphAsCSV(cy, file_name);
-});
+const exportCsvButton = document.getElementById("export-csv");
+if (exportCsvButton) {
+    exportCsvButton.addEventListener("click", function () {
+        exportGraphAsCSV(cy, file_name);
+    });
+}
+
+// --------------------------------------------------------
+// GraphML Exporter (Desktop Cytoscape Compatible)
+// --------------------------------------------------------
+
+const exportGraphmlButton = document.getElementById("export-graphml");
+if (exportGraphmlButton) {
+    exportGraphmlButton.addEventListener("click", function () {
+        exportGraphAsGraphML(cy, file_name);
+    });
+}
+
+// --------------------------------------------------------
+// Mobile Export buttons
+// --------------------------------------------------------
+
+const exportPngMobileButton = document.getElementById("export-png-mobile");
+if (exportPngMobileButton) {
+    exportPngMobileButton.addEventListener("click", function () {
+        exportGraphAsPNG(cy, file_name);
+    });
+}
+
+const exportJpgMobileButton = document.getElementById("export-jpg-mobile");
+if (exportJpgMobileButton) {
+    exportJpgMobileButton.addEventListener("click", function () {
+        exportGraphAsJPG(cy, file_name);
+    });
+}
+
+const exportCsvMobileButton = document.getElementById("export-csv-mobile");
+if (exportCsvMobileButton) {
+    exportCsvMobileButton.addEventListener("click", function () {
+        exportGraphAsCSV(cy, file_name);
+    });
+}
+
+const exportGraphmlMobileButton = document.getElementById("export-graphml-mobile");
+if (exportGraphmlMobileButton) {
+    exportGraphmlMobileButton.addEventListener("click", function () {
+        exportGraphAsGraphML(cy, file_name);
+    });
+}

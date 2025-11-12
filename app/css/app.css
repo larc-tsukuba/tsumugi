@@ -58,7 +58,7 @@ a {
 /* ======================================================== */
 /* control-panel-container */
 /* ======================================================== */
-/* 左パネル */
+/* Left panel */
 .left-control-panel-container {
     flex: 1;
     min-width: 120px;
@@ -69,7 +69,7 @@ a {
     background-color: white;
 }
 
-/* 右パネル */
+/* Right panel */
 .right-control-panel-container {
     flex: 1;
     min-width: 120px;
@@ -176,18 +176,37 @@ a {
 /* search-container */
 /* ======================================================== */
 
+/* Search container styling */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    width: 100%;
+}
+
+.search-container i {
+    position: absolute;
+    left: 10px;
+    color: #999;
+    z-index: 1;
+}
+
 /* Input style */
-#gene-search {
-    width: 70%;
-    padding: 10px;
+#gene-search,
+#phenotype-search {
+    width: 100%;
+    padding: 10px 10px 10px 35px;
     font-size: 14px;
     border: 2px solid #ccc;
     border-radius: 5px;
     outline: none;
+    box-sizing: border-box;
 }
 
 /* Input focus */
-#gene-search:focus {
+#gene-search:focus,
+#phenotype-search:focus {
     border-color: #999;
 }
 
@@ -200,6 +219,58 @@ a {
     border-radius: 6px;
     background-color: #ccc;
     cursor: pointer;
+}
+
+/* ======================================================== */
+/* Selected Phenotype Tags */
+/* ======================================================== */
+
+.selected-phenotypes {
+    margin-top: 10px;
+    max-width: 100%;
+}
+
+.selected-phenotype-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 16px;
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 12px;
+    color: #555;
+}
+
+.selected-phenotype-tag .phenotype-text {
+    margin-right: 6px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.selected-phenotype-tag .remove-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.selected-phenotype-tag .remove-btn:hover {
+    background-color: #666;
+    color: white;
 }
 
 /* Suggestions list */
@@ -244,7 +315,7 @@ ul.suggestions li:hover {
     background-color: #fff;
 }
 
-/* タイトル風スタイルをつける */
+/* Title-style label overlay */
 .boxed-section > span {
     position: absolute;
     top: 0;
@@ -262,17 +333,18 @@ ul.suggestions li:hover {
 }
 
 .boxed-section.align-center {
-    /* 中央揃えのためのスタイル */
+    /* Keep the content left-aligned */
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
     padding: 10px;
     margin-bottom: 20px;
 }
 
-/* 丸型チェックボックススタイル */
+/* Rounded checkbox styling */
 .round-checkbox {
     position: relative;
     margin: 8px 0;
@@ -304,7 +376,7 @@ ul.suggestions li:hover {
     box-sizing: border-box;
 }
 
-/* チェック時だけ黄色背景に */
+/* Highlight in yellow only when checked */
 .round-checkbox input[type="checkbox"]:checked + label:before {
     background-color: #ff8c00;
 }
@@ -452,9 +524,9 @@ footer a:hover {
 }
 
 /* ======================================================== */
-/* スマホ向けデザイン */
+/* Mobile-friendly design */
 /* ======================================================== */
-/* 初期状態でアイコンを非表示 */
+/* Hide the icon by default */
 button.menu-toggle-icon {
     display: none;
     background-color: transparent;
@@ -519,7 +591,7 @@ button.menu-toggle-icon {
         justify-content: center;
     }
 
-    /* パネルコンテナの統合スタイル */
+    /* Consolidated styling for panel containers */
     .left-control-panel-container {
         position: fixed;
         top: 0;
@@ -591,4 +663,82 @@ button.menu-toggle-icon {
     .resource-buttons {
         flex-direction: column;
     }
+}
+
+/* ======================================================== */
+/* Info Tooltip Styles for Network Pages */
+/* ======================================================== */
+.info-tooltip-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.info-tooltip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #555;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.info-tooltip-icon:hover {
+    background-color: #333;
+}
+
+.info-tooltip-content {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 1.4;
+    white-space: nowrap;
+    z-index: 1000;
+    transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    white-space: normal;
+}
+
+.info-tooltip-content::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+.info-tooltip-container:hover .info-tooltip-content,
+.info-tooltip-container.active .info-tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+.info-tooltip-content a {
+    color: #4fc3f7;
+    text-decoration: underline;
+}
+
+.info-tooltip-content a:hover {
+    color: #81d4fa;
 }

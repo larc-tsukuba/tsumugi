@@ -15,10 +15,14 @@ abnormal cholesterol homeostasis
 abnormal chorioallantoic fusion
 abnormal clavicle morphology
 abnormal coat appearance
+abnormal coat hair pigmentation
+abnormal coat  hair morphology
 abnormal colon morphology
+abnormal contextual conditioning behavior
 abnormal cornea morphology
 abnormal craniofacial morphology
 abnormal cranium morphology
+abnormal cued conditioning behavior
 abnormal digit morphology
 abnormal duodenum morphology
 abnormal ear morphology
@@ -28,6 +32,7 @@ abnormal embryo turning
 abnormal epididymis morphology
 abnormal eyelid aperture
 abnormal eyelid fusion
+abnormal eyelid morphology
 abnormal eye anterior chamber depth
 abnormal eye morphology
 abnormal eye pigmentation
@@ -47,7 +52,6 @@ abnormal hair growth
 abnormal head morphology
 abnormal head shape
 abnormal head size
-abnormal heartbeat
 abnormal heart left ventricle morphology
 abnormal heart looping
 abnormal heart morphology
@@ -56,7 +60,6 @@ abnormal hindbrain morphology
 abnormal hindlimb morphology
 abnormal humerus morphology
 abnormal ileum morphology
-abnormal incisor morphology
 abnormal inspiratory capacity
 abnormal iris morphology
 abnormal iris pigmentation
@@ -73,21 +76,19 @@ abnormal locomotor behavior
 abnormal lumbar vertebrae morphology
 abnormal lung morphology
 abnormal lymph node morphology
-abnormal male genitalia morphology
 abnormal mammary gland morphology
 abnormal mandible morphology
 abnormal maxilla morphology
-abnormal metabolism
 abnormal midbrain development
 abnormal midbrain morphology
-abnormal mouth morphology
+abnormal motor capabilities coordination movement
+abnormal motor coordination balance
 abnormal nail morphology
 abnormal neural tube closure
 abnormal neural tube morphology
 abnormal optic disk morphology
 abnormal optic vesicle formation
 abnormal otic vesicle morphology
-abnormal outer ear morphology
 abnormal ovary morphology
 abnormal pancreas morphology
 abnormal pelvic girdle bone morphology
@@ -99,6 +100,7 @@ abnormal placenta morphology
 abnormal placenta size
 abnormal placenta vasculature
 abnormal pupil morphology
+abnormal QT variability
 abnormal radius morphology
 abnormal response to new environment
 abnormal response to tactile stimuli
@@ -109,13 +111,13 @@ abnormal retina outer nuclear layer morphology
 abnormal retina pigmentation
 abnormal retina vasculature morphology
 abnormal rib morphology
+abnormal sacral vertebrae morphology
 abnormal scapula morphology
 abnormal seminal vesicle morphology
 abnormal sinus arrhythmia
 abnormal skeletal muscle morphology
 abnormal skin appearance
 abnormal skin coloration
-abnormal skin condition
 abnormal skin morphology
 abnormal sleep behavior
 abnormal snout morphology
@@ -131,14 +133,14 @@ abnormal tail length
 abnormal tail morphology
 abnormal tail movements
 abnormal testis morphology
+abnormal thoracic cage shape
 abnormal thymus morphology
-abnormal thyroid gland morphology
 abnormal tibia morphology
 abnormal tooth color
 abnormal tooth morphology
-abnormal trachea morphology
 abnormal ulna morphology
 abnormal urinary bladder morphology
+abnormal urination
 abnormal uterus morphology
 abnormal vertebrae morphology
 abnormal vertebral arch morphology
@@ -148,13 +150,15 @@ abnormal vitelline vasculature morphology
 abnormal vitreous body morphology
 abnormal vocalization
 abnormal zygomatic bone morphology
-absent lymph nodes
-absent optic nerve
 absent pinna reflex
 absent seminal vesicle
+absent teeth
+absent testes
 absent vibrissae
 anophthalmia
+aorta stenosis
 bleb
+brachydactyly
 cardiovascular system phenotype
 cataract
 cleft palate
@@ -162,9 +166,13 @@ convulsive seizures
 cornea deposits
 cornea opacity
 cornea vascularization
+curly tail
 cyanosis
 cystolithiasis
+decreased alpha-beta T cell number
 decreased anxiety-related response
+decreased B-1a cell number
+decreased B-2 B cell number
 decreased basophil cell number
 decreased blood urea nitrogen level
 decreased body length
@@ -172,13 +180,23 @@ decreased body temperature
 decreased body weight
 decreased bone mineral content
 decreased bone mineral density
+decreased bone trabecula number
 decreased brain size
 decreased brain weight
 decreased bronchoconstrictive response
 decreased B cell number
 decreased cardiac muscle contractility
+decreased cardiac output
+decreased cardiac stroke volume
+decreased caudal vertebrae number
+decreased CD11b-high dendritic cell number
+decreased CD4-negative NK T cell number
 decreased CD4-positive, alpha-beta T cell number
+decreased CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+decreased CD4-positive NK T cell number
+decreased CD5-positive Ly6C-positive T cell number
 decreased CD8-positive, alpha-beta T cell number
+decreased CD8-positive, naive alpha-beta T cell number
 decreased circulating alanine transaminase level
 decreased circulating alkaline phosphatase level
 decreased circulating amylase level
@@ -195,6 +213,7 @@ decreased circulating glycerol level
 decreased circulating HDL cholesterol level
 decreased circulating iron level
 decreased circulating LDL cholesterol level
+decreased circulating magnesium level
 decreased circulating phosphate level
 decreased circulating potassium level
 decreased circulating serum albumin level
@@ -202,47 +221,79 @@ decreased circulating sodium level
 decreased circulating thyroxine level
 decreased circulating total protein level
 decreased circulating triglyceride level
+decreased dendritic cell number
 decreased effector memory CD8-positive, alpha-beta T cell number
 decreased effector memory T-helper cell number
 decreased eosinophil cell number
 decreased erythrocyte cell number
 decreased exploration in new environment
 decreased fasting circulating glucose level
+decreased follicular B cell number
 decreased food intake
+decreased freezing behavior
+decreased gamma-delta T cell number
 decreased grip strength
 decreased heart left ventricle size
 decreased heart rate
+decreased heart rate variability
 decreased heart weight
 decreased hematocrit
 decreased hemoglobin content
+decreased immature B cell number
+decreased immature NK cell number
 decreased kidney weight
+decreased KLRG1-positive NK cell number
+decreased KLRG1-positive T-helper cell number
+decreased lactate dehydrogenase level
 decreased large unstained cell number
 decreased lean body mass
 decreased leukocyte cell number
+decreased liver weight
 decreased locomotor activity
 decreased lung compliance
 decreased lung elastance
+decreased lung tissue damping
+decreased Ly6C-positive immature NK cell number
+decreased Ly6C-positive mature NK cell number
+decreased Ly6C-positive NK T cell number
+decreased Ly6C low monocyte number
 decreased lymphocyte cell number
+decreased macrophage cell number
+decreased marginal zone B cell number
+decreased mature B cell number
+decreased mature NK cell number
 decreased mean corpuscular hemoglobin
 decreased mean corpuscular hemoglobin concentration
 decreased mean corpuscular volume
 decreased mean platelet volume
+decreased memory-marker CD4-negative NK T cell number
+decreased memory-marker CD4-positive NK T cell number
+decreased memory-marker gamma-delta T cell number
+decreased memory-marker NK cell number
+decreased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
 decreased monocyte cell number
 decreased neutrophil cell number
 decreased NK cell number
+decreased NK T cell number
+decreased plasmacytoid dendritic cell number
 decreased prepulse inhibition
-decreased pulmonary respiratory rate
 decreased pulmonary ventilation
 decreased red blood cell distribution width
+decreased regulatory T cell number
 decreased respiratory quotient
+decreased sacral vertebrae number
 decreased spleen weight
 decreased startle reflex
+decreased T-helper cell number
 decreased thigmotaxis
 decreased total body fat amount
 decreased total retina thickness
+decreased transitional stage T1 B cell number
+decreased transitional stage T2 B cell number
 decreased T cell number
 decreased urine magnesium level
 decreased vertical activity
+dilated aorta
 dilated heart left ventricle
 edema
 embryonic growth retardation
@@ -250,6 +301,7 @@ embryonic lethality prior to organogenesis
 embryonic lethality prior to tooth bud stage
 enhanced contextual conditioning behavior
 enhanced cued conditioning behavior
+enlarged adrenal glands
 enlarged cecum
 enlarged epididymis
 enlarged gallbladder
@@ -261,11 +313,13 @@ enlarged ovary
 enlarged prostate gland
 enlarged seminal vesicle
 enlarged spleen
+enlarged stomach
 enlarged testis
 enlarged thymus
 enlarged urinary bladder
 enlarged uterus
 exencephaly
+eyelids fail to open
 eye hemorrhage
 facial cleft
 female infertility
@@ -277,24 +331,40 @@ herniated abdominal wall
 hydrocephaly
 hydrometra
 hyperactivity
+hypoalgesia
+immune system phenotype
 impaired contextual conditioning behavior
+impaired cued conditioning behavior
 impaired glucose tolerance
 impaired pupillary reflex
 impaired righting response
 improved glucose tolerance
-increased aggression
 increased airway resistance
+increased alpha-beta T cell number
+increased anti-nuclear antigen antibody level
 increased anxiety-related response
 increased basophil cell number
 increased blood urea nitrogen level
+increased blood uric acid level
 increased body length
-increased body weight
 increased bone mineral content
 increased bone mineral density
+increased bone trabecular spacing
 increased brain size
 increased brain weight
+increased B cell number
 increased cardiac muscle contractility
+increased cardiac output
+increased cardiac stroke volume
+increased CD103-positive CD11b-low dendritic cell number
+increased CD11b-low dendritic cell number
+increased CD4-negative NK T cell number
+increased CD4-positive, alpha-beta memory T cell number
 increased CD4-positive, alpha-beta T cell number
+increased CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+increased CD4-positive NK T cell number
+increased CD5-positive gamma-delta T cell number
+increased CD8-positive, alpha-beta memory T cell number
 increased CD8-positive, alpha-beta T cell number
 increased CD8-positive, naive alpha-beta T cell number
 increased circulating alanine transaminase level
@@ -314,6 +384,7 @@ increased circulating glycerol level
 increased circulating HDL cholesterol level
 increased circulating insulin level
 increased circulating iron level
+increased circulating lactate dehydrogenase level
 increased circulating LDL cholesterol level
 increased circulating lipase level
 increased circulating magnesium level
@@ -325,14 +396,21 @@ increased circulating thyroxine level
 increased circulating total protein level
 increased circulating triglyceride level
 increased circulating unsaturated transferrin level
+increased coping response
 increased cornea thickness
+increased dendritic cell number
+increased effector memory CD8-positive, alpha-beta T cell number
 increased effector memory T-helper cell number
 increased eosinophil cell number
 increased erythrocyte cell number
 increased exploration in new environment
 increased fasting circulating glucose level
+increased fluid intake
+increased follicular B cell number
 increased food intake
 increased freezing behavior
+increased gamma-delta T cell number
+increased granulocyte number
 increased grip strength
 increased heart left ventricle size
 increased heart rate
@@ -340,24 +418,45 @@ increased heart rate variability
 increased heart weight
 increased hematocrit
 increased hemoglobin content
-increased IgE level
+increased IgG2b level
+increased IgG3 level
+increased immature NK cell number
 increased kidney weight
+increased KLRG1+ CD4 alpha-beta T cell number
+increased KLRG1+ CD8 alpha-beta T cell number
+increased KLRG1-positive CD4-negative NK T cell number
+increased KLRG1-positive CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+increased KLRG1-positive NK cell number
+increased KLRG1-positive T-helper cell number
 increased lactate dehydrogenase level
 increased large unstained cell number
 increased lean body mass
 increased leukocyte cell number
+increased liver weight
 increased lung compliance
 increased lung elastance
 increased lung tissue damping
+increased Ly6C-positive NK T cell number
+increased Ly6C high monocyte number
+increased Ly6C low monocyte number
 increased lymphocyte cell number
+increased mature B cell number
+increased mature NK cell number
 increased mean corpuscular hemoglobin
 increased mean corpuscular hemoglobin concentration
 increased mean corpuscular volume
 increased mean platelet volume
+increased memory-marker CD4-negative NK T cell number
+increased memory-marker CD4-positive NK T cell number
+increased memory-marker gamma-delta T cell number
+increased memory-marker NK cell number
+increased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
 increased monocyte cell number
 increased neutrophil cell number
 increased NK cell number
 increased NK T cell number
+increased plasmacytoid dendritic cell number
+increased plasma cell number
 increased prepulse inhibition
 increased pulmonary respiratory rate
 increased pulmonary ventilation
@@ -366,20 +465,19 @@ increased respiratory quotient
 increased spleen weight
 increased startle reflex
 increased T-helper cell number
+increased thermal nociceptive threshold
 increased thigmotaxis
-increased tidal volume
 increased total body fat amount
-increased total retina thickness
 increased T cell number
-increased urine microalbumin level
 increased vertical activity
-iris synechia
 irregularly shaped pupil
+kinked tail
 kyphosis
 limb grasping
 long tibia
 lordosis
 male infertility
+megacolon
 microcephaly
 microphthalmia
 mydriasis
@@ -391,36 +489,36 @@ pallor
 persistence of hyaloid vascular system
 polycystic kidney
 polydactyly
-polysyndactyly
 prenatal lethality
 prenatal lethality prior to heart atrial septation
 preweaning lethality, complete penetrance
-prolonged PQ interval
+preweaning lethality, incomplete penetrance
+prolonged PR interval
 prolonged QRS complex duration
 prolonged QT interval
 prolonged RR interval
 prolonged ST segment
 protruding tongue
-respiratory system phenotype
-rib fusion
 sclerocornea
+scoliosis
 shortened PQ interval
 shortened PR interval
 shortened QRS complex duration
+shortened QT interval
 shortened RR interval
 shortened ST segment
+short tail
 short tibia
-single kidney
 small adrenal glands
 small epididymis
 small heart
 small kidney
 small liver
 small lung
+small ovary
 small seminal vesicle
 small spleen
 small stomach
-small superior vagus ganglion
 small testis
 small thymus
 small uterus

@@ -7,7 +7,7 @@
 */
 function formatPhenotypesWithHighlight(phenotypes, target_phenotype) {
     if (!target_phenotype) {
-        return phenotypes.map((anno) => "・ " + anno).join("<br>");
+        return phenotypes.map((anno) => "- " + anno).join("<br>");
     }
 
     const matching = [];
@@ -28,13 +28,19 @@ function formatPhenotypesWithHighlight(phenotypes, target_phenotype) {
             if (phenotype.startsWith(target_phenotype)) {
                 return `🚩 ${phenotype}`;
             } else {
-                return "・ " + phenotype;
+                return "- " + phenotype;
             }
         })
         .join("<br>");
 }
 
-function createTooltip(event, cy, map_symbol_to_id, target_phenotype = null) {
+function createTooltip(
+    event,
+    cy,
+    map_symbol_to_id,
+    target_phenotype = null,
+    { allNodeColors } = {},
+) {
     const data = event.target.data();
     let tooltipText = "";
     let pos;
@@ -45,18 +51,28 @@ function createTooltip(event, cy, map_symbol_to_id, target_phenotype = null) {
     if (event.target.isNode()) {
         const geneID = map_symbol_to_id[data.id] || "UNKNOWN";
         const url_impc = `https://www.mousephenotype.org/data/genes/${geneID}`;
-        tooltipText = `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.id} KO mice</a></b><br>`;
+        const rawSeverity = Number.isFinite(data.original_node_color) ? data.original_node_color : data.node_color;
+        const nodeColorSet = Array.isArray(allNodeColors) ? new Set(allNodeColors) : new Set();
+        const uniqueValues = [...nodeColorSet];
+        const isBinary =
+            uniqueValues.length === 1 &&
+            ["0", "1", "100"].includes(String(Math.round(Number(uniqueValues[0]))));
+        const severityValue = !isBinary && Number.isFinite(rawSeverity) ? Math.round(rawSeverity) : null;
+        const severityText = severityValue !== null ? ` (Severity: ${severityValue})` : "";
+        tooltipText = `<b>Phenotypes of <a href="${url_impc}" target="_blank">${data.id} KO mice</a>${severityText}</b><br>`;
         tooltipText += formatPhenotypesWithHighlight(phenotypes, target_phenotype);
-        // もしdiseasesが""出ない場合は、Associated Human Diseasesを追加
+        // Append the associated human diseases section when data is available
         if (diseases && diseases.length > 0 && diseases[0] !== "") {
             tooltipText += `<br><br><b>Associated Human Diseases</b><br>`;
-            tooltipText += diseases.map((disease) => "・ " + disease).join("<br>");
+            tooltipText += diseases.map((disease) => "- " + disease).join("<br>");
         }
         pos = event.target.renderedPosition();
     } else if (event.target.isEdge()) {
         const sourceNode = cy.getElementById(data.source).data("label");
         const targetNode = cy.getElementById(data.target).data("label");
-        tooltipText = `<b>Shared phenotypes of ${sourceNode} and ${targetNode} KOs</b><br>`;
+        const hasSimilarityValue = Number.isFinite(data.edge_size);
+        const similarityText = hasSimilarityValue ? ` (Similarity: ${Math.round(data.edge_size)})` : "";
+        tooltipText = `<b>Shared phenotypes of ${sourceNode} and ${targetNode} KOs${similarityText}</b><br>`;
         tooltipText += formatPhenotypesWithHighlight(phenotypes, target_phenotype);
 
         const sourcePos = cy.getElementById(data.source).renderedPosition();
@@ -74,6 +90,7 @@ function enableTooltipDrag(tooltip) {
     let isDragging = false;
     let offset = { x: 0, y: 0 };
 
+    // Mouse events (existing functionality)
     tooltip.addEventListener("mousedown", function (e) {
         e.stopPropagation();
         isDragging = true;
@@ -95,15 +112,56 @@ function enableTooltipDrag(tooltip) {
         isDragging = false;
         tooltip.style.cursor = "move";
     });
+
+    // Touch events for tablet/mobile support
+    tooltip.addEventListener("touchstart", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        isDragging = true;
+        const touch = e.touches[0];
+        const rect = tooltip.getBoundingClientRect();
+        offset.x = touch.clientX - rect.left;
+        offset.y = touch.clientY - rect.top;
+        tooltip.style.cursor = "grabbing";
+    });
+
+    document.addEventListener("touchmove", function (e) {
+        if (isDragging) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const containerRect = document.querySelector(".cy").getBoundingClientRect();
+            tooltip.style.left = `${touch.clientX - offset.x - containerRect.left}px`;
+            tooltip.style.top = `${touch.clientY - offset.y - containerRect.top}px`;
+        }
+    });
+
+    document.addEventListener("touchend", function () {
+        isDragging = false;
+        tooltip.style.cursor = "move";
+    });
 }
 
 /*
     Accepts target_phenotype and passes it to createTooltip
 */
-export function showTooltip(event, cy, map_symbol_to_id, target_phenotype = null) {
+export function showTooltip(
+    event,
+    cy,
+    map_symbol_to_id,
+    target_phenotype = null,
+    nodeColorMin,
+    nodeColorMax,
+    edgeMin,
+    edgeMax,
+    nodeSizes,
+) {
     removeTooltips();
 
-    const { tooltipText, pos } = createTooltip(event, cy, map_symbol_to_id, target_phenotype);
+    const { tooltipText, pos } = createTooltip(event, cy, map_symbol_to_id, target_phenotype, {
+        nodeColorMin,
+        nodeColorMax,
+        allNodeColors: nodeSizes,
+    });
 
     const tooltip = document.createElement("div");
     tooltip.classList.add("cy-tooltip");
