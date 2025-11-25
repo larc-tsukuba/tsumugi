@@ -1,167 +1,167 @@
-increased KLRG1-positive CD4-positive, CD25-positive, alpha-beta regulatory T cell number
-decreased gamma-delta T cell number
-pale yolk sac
+abnormal abdominal wall morphology
+abnormal adrenal gland morphology
+abnormal allantois morphology
+abnormal blood vessel morphology
+abnormal body wall morphology
+abnormal brain morphology
+abnormal cecum morphology
+abnormal chorioallantoic fusion
+abnormal colon morphology
+abnormal duodenum morphology
+abnormal embryo development
+abnormal embryo turning
+abnormal epididymis morphology
+abnormal eyelid fusion
+abnormal facial morphology
+abnormal forebrain development
+abnormal forebrain morphology
+abnormal gallbladder morphology
+abnormal head shape
+abnormal heart looping
+abnormal hindbrain development
+abnormal hindbrain morphology
+abnormal ileum morphology
+abnormal kidney morphology
+abnormal left-right axis patterning
+abnormal limb bud morphology
+abnormal limb morphology
+abnormal liver morphology
+abnormal liver size
+abnormal lung morphology
+abnormal lymph node morphology
+abnormal mammary gland morphology
+abnormal midbrain development
+abnormal midbrain morphology
+abnormal neural tube closure
+abnormal neural tube morphology
+abnormal optic vesicle formation
 abnormal otic vesicle morphology
 abnormal ovary morphology
-short tail
+abnormal pancreas morphology
+abnormal pericardium morphology
+abnormal pharyngeal arch morphology
+abnormal placenta development
+abnormal placenta morphology
+abnormal placenta size
+abnormal placenta vasculature
+abnormal seminal vesicle morphology
+abnormal skeletal muscle morphology
+abnormal somite shape
+abnormal spinal cord morphology
+abnormal spleen morphology
+abnormal sternum morphology
+abnormal stomach morphology
+abnormal tail bud morphology
+abnormal testis morphology
+abnormal thymus morphology
+abnormal tooth color
+abnormal urinary bladder morphology
+abnormal uterus morphology
+abnormal visceral yolk sac morphology
+abnormal vitelline vasculature morphology
+absent seminal vesicle
+bleb
+cleft palate
+cyanosis
+cystolithiasis
+decreased KLRG1-positive NK cell number
+decreased KLRG1-positive T-helper cell number
+decreased Ly6C low monocyte number
+decreased alpha-beta T cell number
+decreased brain size
+decreased dendritic cell number
+decreased gamma-delta T cell number
+decreased immature B cell number
+decreased immature NK cell number
+decreased mature NK cell number
+decreased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+decreased memory-marker NK cell number
+decreased memory-marker gamma-delta T cell number
+decreased regulatory T cell number
+decreased transitional stage T1 B cell number
+decreased transitional stage T2 B cell number
+edema
+embryonic growth retardation
+embryonic lethality prior to organogenesis
+embryonic lethality prior to tooth bud stage
+enlarged adrenal glands
+enlarged cecum
+enlarged epididymis
+enlarged gallbladder
+enlarged heart
+enlarged kidney
+enlarged liver
+enlarged lymph nodes
+enlarged ovary
+enlarged prostate gland
+enlarged seminal vesicle
+enlarged spleen
+enlarged stomach
+enlarged testis
+enlarged thymus
+enlarged urinary bladder
+enlarged uterus
+exencephaly
+facial cleft
+female infertility
+hemorrhage
+hydrocephaly
+hydrometra
+increased CD103-positive CD11b-low dendritic cell number
+increased CD11b-low dendritic cell number
+increased CD4-positive, alpha-beta memory T cell number
+increased CD5-positive gamma-delta T cell number
+increased CD8-positive, alpha-beta memory T cell number
+increased KLRG1+ CD4 alpha-beta T cell number
+increased KLRG1+ CD8 alpha-beta T cell number
+increased KLRG1-positive CD4-negative NK T cell number
+increased KLRG1-positive CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+increased KLRG1-positive NK cell number
+increased KLRG1-positive T-helper cell number
+increased Ly6C high monocyte number
 increased Ly6C low monocyte number
 increased alpha-beta T cell number
-preweaning lethality, complete penetrance
-abnormal epididymis morphology
-decreased KLRG1-positive T-helper cell number
-enlarged prostate gland
-increased CD5-positive gamma-delta T cell number
-enlarged kidney
-preweaning lethality, incomplete penetrance
-abnormal facial morphology
-embryonic lethality prior to organogenesis
-abnormal limb bud morphology
-pale liver
-decreased dendritic cell number
-edema
-decreased immature B cell number
-increased brain size
-decreased alpha-beta T cell number
-abnormal somite shape
-small lung
-small heart
-abnormal embryo turning
-abnormal blood vessel morphology
-abnormal forebrain development
-small uterus
-decreased memory-marker gamma-delta T cell number
-cyanosis
-no spontaneous movement
-cystolithiasis
-enlarged ovary
-abnormal visceral yolk sac morphology
-enlarged seminal vesicle
-increased KLRG1+ CD8 alpha-beta T cell number
-small ovary
-increased dendritic cell number
-enlarged stomach
-increased KLRG1-positive T-helper cell number
-increased CD11b-low dendritic cell number
-abnormal colon morphology
-prenatal lethality prior to heart atrial septation
-microcephaly
-increased CD4-positive, alpha-beta memory T cell number
-abnormal lymph node morphology
-increased CD103-positive CD11b-low dendritic cell number
-abnormal placenta development
-decreased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
-abnormal midbrain morphology
-increased immature NK cell number
-abnormal skeletal muscle morphology
-small thymus
-embryonic growth retardation
-abnormal spinal cord morphology
-abnormal abdominal wall morphology
-abnormal seminal vesicle morphology
-increased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
-small kidney
 increased anti-nuclear antigen antibody level
-bleb
-prenatal lethality
-abnormal ileum morphology
-abnormal tooth color
-decreased Ly6C low monocyte number
-abnormal thymus morphology
-decreased regulatory T cell number
-enlarged epididymis
-urinary bladder obstruction
-small spleen
-enlarged uterus
-unresponsive to tactile stimuli
-polydactyly
-abnormal midbrain development
-decreased brain size
-hydrocephaly
-decreased transitional stage T2 B cell number
-increased KLRG1-positive NK cell number
-enlarged testis
-abnormal limb morphology
-abnormal mammary gland morphology
-cleft palate
-increased KLRG1-positive CD4-negative NK T cell number
-abnormal testis morphology
-increased mature NK cell number
-increased Ly6C high monocyte number
-abnormal forebrain morphology
-abnormal pharyngeal arch morphology
-facial cleft
-decreased transitional stage T1 B cell number
-abnormal tail bud morphology
-hemorrhage
-abnormal placenta size
-small liver
-protruding tongue
-enlarged gallbladder
-abnormal heart looping
-abnormal placenta morphology
-abnormal adrenal gland morphology
-increased memory-marker NK cell number
-megacolon
-abnormal body wall morphology
-decreased immature NK cell number
-abnormal placenta vasculature
-enlarged thymus
-microphthalmia
-polycystic kidney
-enlarged spleen
-abnormal brain morphology
-abnormal gallbladder morphology
-abnormal spleen morphology
-increased plasma cell number
-small seminal vesicle
-abnormal neural tube closure
-absent seminal vesicle
-abnormal liver size
-male infertility
-abnormal stomach morphology
-abnormal eyelid fusion
-abnormal liver morphology
-abnormal chorioallantoic fusion
-abnormal left-right axis patterning
-abnormal sternum morphology
-decreased KLRG1-positive NK cell number
-abnormal pancreas morphology
-abnormal allantois morphology
-exencephaly
-abnormal urinary bladder morphology
-enlarged adrenal glands
-female infertility
-decreased mature NK cell number
-abnormal hindbrain development
-abnormal cecum morphology
-small testis
-increased CD8-positive, alpha-beta memory T cell number
-abnormal vitelline vasculature morphology
-abnormal hindbrain morphology
+increased brain size
+increased dendritic cell number
 increased gamma-delta T cell number
+increased immature NK cell number
+increased mature NK cell number
+increased memory CD4-positive, CD25-positive, alpha-beta regulatory T cell number
+increased memory-marker NK cell number
 increased memory-marker gamma-delta T cell number
-abnormal lung morphology
-enlarged urinary bladder
-embryonic lethality prior to tooth bud stage
-abnormal head shape
-small epididymis
-hydrometra
-abnormal pericardium morphology
-abnormal embryo development
-abnormal duodenum morphology
-abnormal optic vesicle formation
-enlarged cecum
-abnormal neural tube morphology
-small adrenal glands
-small stomach
-abnormal uterus morphology
-abnormal kidney morphology
-enlarged lymph nodes
-enlarged liver
-thick skin
-enlarged heart
-pallor
-increased KLRG1+ CD4 alpha-beta T cell number
-spina bifida
-decreased memory-marker NK cell number
+increased plasma cell number
 increased plasmacytoid dendritic cell number
+male infertility
+megacolon
+microcephaly
+microphthalmia
+no spontaneous movement
+pale liver
+pale yolk sac
+pallor
+polycystic kidney
+polydactyly
+prenatal lethality
+prenatal lethality prior to heart atrial septation
+preweaning lethality, complete penetrance
+preweaning lethality, incomplete penetrance
+protruding tongue
+short tail
+small adrenal glands
+small epididymis
+small heart
+small kidney
+small liver
+small lung
+small ovary
+small seminal vesicle
+small spleen
+small stomach
+small testis
+small thymus
+small uterus
+spina bifida
+thick skin
+unresponsive to tactile stimuli
+urinary bladder obstruction

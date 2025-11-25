@@ -29,7 +29,7 @@ import { initializeCentralitySystem, recalculateCentrality } from "../js/central
 
 // REMOVE_TO_THIS_LINE
 
-const elements = loadJSONGz('../../data/genesymbol/Tmem255b.json.gz');
+const elements = loadJSONGz('../../data/genesymbol/Mtmr6.json.gz');
 const map_symbol_to_id = loadJSON("../../data/marker_symbol_accession_id.json");
 
 // ############################################################################
@@ -72,7 +72,7 @@ const componentSpacingMin = 1;
 const componentSpacingMax = 200;
 
 // Use different defaults for gene symbol pages only
-const isGeneSymbolPage = "loadJSONGz('../../data/genesymbol/Tmem255b.json.gz')".includes("genesymbol");
+const isGeneSymbolPage = "loadJSONGz('../../data/genesymbol/Mtmr6.json.gz')".includes("genesymbol");
 const defaultNodeRepulsion = isGeneSymbolPage ? 8 : 5;
 
 let nodeRepulsionValue = scaleToOriginalRange(
@@ -289,7 +289,7 @@ function filterByNodeColorAndEdgeSize() {
     const components = candidateElements.components();
 
     // 4. Identify only the nodes directly connected to the target gene
-    const targetGene = "Tmem255b";
+    const targetGene = "Mtmr6";
     const targetNode = cy.getElementById(targetGene);
 
     if (targetNode.length === 0) {
@@ -477,7 +477,7 @@ cy.on("tap", function (event) {
 // Exporter
 // ############################################################################
 
-const file_name = "TSUMUGI_Tmem255b";
+const file_name = "TSUMUGI_Mtmr6";
 
 // --------------------------------------------------------
 // PNG Exporter

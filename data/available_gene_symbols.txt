@@ -2162,6 +2162,7 @@ Mtmr11
 Mtmr14
 Mtmr2
 Mtmr3
+Mtmr6
 Mtor
 Mtpap
 Mturn
@@ -3008,7 +3009,6 @@ Selenok
 Selenot
 Sema3f
 Sema4d
-Sema5b
 Senp1
 Sephs2
 Sepsecs
@@ -3461,7 +3461,6 @@ Tmem225
 Tmem237
 Tmem240
 Tmem248
-Tmem255b
 Tmem256
 Tmem260
 Tmem38b
@@ -3768,7 +3767,6 @@ Wnt4
 Wnt6
 Wrap53
 Wrn
-Wrnip1
 Wsb2
 Wwc2
 Xbp1
@@ -3834,7 +3832,6 @@ Zfp260
 Zfp266
 Zfp280d
 Zfp281
-Zfp334
 Zfp341
 Zfp407
 Zfp414
