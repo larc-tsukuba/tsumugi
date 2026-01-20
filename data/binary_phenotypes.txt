@@ -158,6 +158,7 @@ small ovary
 small seminal vesicle
 small spleen
 small stomach
+small superior vagus ganglion
 small testis
 small thymus
 small uterus

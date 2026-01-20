@@ -339,6 +339,7 @@ impaired glucose tolerance
 impaired pupillary reflex
 impaired righting response
 improved glucose tolerance
+increased aggression
 increased airway resistance
 increased alpha-beta T cell number
 increased anti-nuclear antigen antibody level
@@ -352,7 +353,6 @@ increased bone mineral density
 increased bone trabecular spacing
 increased brain size
 increased brain weight
-increased B cell number
 increased cardiac muscle contractility
 increased cardiac output
 increased cardiac stroke volume
@@ -392,7 +392,6 @@ increased circulating phosphate level
 increased circulating potassium level
 increased circulating serum albumin level
 increased circulating sodium level
-increased circulating thyroxine level
 increased circulating total protein level
 increased circulating triglyceride level
 increased circulating unsaturated transferrin level
@@ -519,6 +518,7 @@ small ovary
 small seminal vesicle
 small spleen
 small stomach
+small superior vagus ganglion
 small testis
 small thymus
 small uterus
