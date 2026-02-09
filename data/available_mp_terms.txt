@@ -94,7 +94,6 @@ abnormal pancreas morphology
 abnormal pelvic girdle bone morphology
 abnormal pericardium morphology
 abnormal pharyngeal arch morphology
-abnormal placement of pupils
 abnormal placenta development
 abnormal placenta morphology
 abnormal placenta size
@@ -256,7 +255,6 @@ decreased lung tissue damping
 decreased Ly6C-positive immature NK cell number
 decreased Ly6C-positive mature NK cell number
 decreased Ly6C-positive NK T cell number
-decreased Ly6C low monocyte number
 decreased lymphocyte cell number
 decreased macrophage cell number
 decreased marginal zone B cell number
@@ -346,7 +344,6 @@ increased anti-nuclear antigen antibody level
 increased anxiety-related response
 increased basophil cell number
 increased blood urea nitrogen level
-increased blood uric acid level
 increased body length
 increased bone mineral content
 increased bone mineral density
@@ -354,7 +351,6 @@ increased bone trabecular spacing
 increased brain size
 increased brain weight
 increased cardiac muscle contractility
-increased cardiac output
 increased cardiac stroke volume
 increased CD103-positive CD11b-low dendritic cell number
 increased CD11b-low dendritic cell number

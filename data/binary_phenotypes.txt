@@ -66,7 +66,6 @@ cyanosis
 cystolithiasis
 decreased KLRG1-positive NK cell number
 decreased KLRG1-positive T-helper cell number
-decreased Ly6C low monocyte number
 decreased alpha-beta T cell number
 decreased brain size
 decreased dendritic cell number
